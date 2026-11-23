@@ -206,28 +206,34 @@ bye
 ---
 
 ## Challenge 5: Advanced RAG, measured (`ch05`)
-**Provider / Model:** Groq (`openai/gpt-oss-120b`, also the judge) · **Retrieval:** ChromaDB dense (`all-MiniLM-L6-v2`) + `rank-bm25`, merged with Reciprocal Rank Fusion · **No frameworks**
+**Provider / Model:** Groq (`openai/gpt-oss-120b`) + Local Embeddings (`all-MiniLM-L6-v2` via ChromaDB) + BM25 (`rank-bm25`)
 
-### 1. What was built
-* **Heading-aware chunking:** one chunk per `## N.` section (id `file#N`, matching the golden set's section ids), Markdown tables never split, each chunk prefixed with `[Title | N. Heading | Effective YYYY-MM-DD]` → **58 chunks** (max 690 chars) instead of 15 whole-document chunks.
-* **Hybrid search:** dense top-20 + BM25 top-20 (SKUs kept as whole tokens, `18,000` → `18000`) merged with RRF (k=60).
-* **Rerank top-20 → top-5:** a fast feature reranker (query-word coverage, section-heading match, exact SKU match) on top of the RRF score. `sentence-transformers` cross-encoders were skipped: they pull in PyTorch (~1-2 GB, slow on CPU).
-* **Query rewriting:** `desk ask "and for 30,000?" --prev "<earlier question>"` turns a follow-up into a standalone query with one LLM call (falls back to joining the questions if the call fails).
-* **Latest `effective_date` preference:** two sections from the same policy family (`POL-RET-001` vs `POL-RET-002`) with ≥0.35 word overlap count as the same rule; the newer one is pulled into the top 5 and ranked above the older, and both get a `NOTE` naming the dates. The prompt tells the model to apply the latest rule and state its effective date.
-* **`--catalog` (stretch):** adds the `catalog.csv` row of any SKU in the question as a citable chunk (`[catalog.csv#MS-ELC0410]`).
-* **`desk eval-rag`:** step-by-step ablation (Recall@5, MRR@5) + LLM-judged faithfulness on the 40 golden questions. Reference answers go only to the judge, never to the answering model.
+### 1. Why We Built This: Naive RAG vs. Advanced RAG
 
-### 2. Build & Acceptance Verification ("Done when")
-* **Unit Tests (`python -m unittest -v`):** Passed — **129/129** (31 new in `tests/test_ch05.py`): heading/table chunking, RRF math, BM25 rescue of a dense miss, exact-SKU boost, query rewrite + fallback, latest-date preference, Recall@5 / MRR math, judge flow.
-* **`desk ingest` idempotency:** `stored 58 chunks (0 new, 0 stale removed)` on re-run.
-* **Live `desk ask`:**
-  * *Opened items:* "7 days under the updated terms effective 2026-03-01 [returns_opened_items.md#2] (replacing the 14-day window effective 2025-01-01 [returns.md#3])" ✅
-  * *Follow-up* `"and for 30,000?" --prev "...18,000 rupees?"` → free freight [shipping.md#3] ✅
-  * *Catalog* `"What warranty applies to MS-ELC0410?" --catalog` → 24 months ✅
-  * *Refusal* `"Who is Meridian's CEO?"` → `not in the documents` ✅
-  * Input tokens per question dropped from ~1,200-1,600 (Ch4) to ~750-950.
+| What Failed in Challenge 4 (Naive RAG) | How Challenge 5 Fixes It (Advanced RAG) |
+| :--- | :--- |
+| No way to measure quality (had to eyeball `--debug` scores) | **Step 1: Golden Set + Metrics (`Recall@5`, `MRR`, `Faithfulness`)** — builds an automated scorecard first. |
+| Blind 2,000-char cutting sliced Markdown tables in half and lost document headers | **Step 2: Structure-Aware Chunking** — splits on `##` headings, keeps tables intact, and prepends `[Title \| Section \| Effective Date]`. |
+| Dense embeddings missed exact SKUs (`MS-HAZ0101` / `MS-VLV0200`) | **Step 3: Hybrid Search (BM25 + Vectors + RRF)** — pairs exact keyword matching with semantic vectors. |
+| Top-k noise & vague follow-ups (`"what about for bulk?"` failed in chat) | **Steps 4 & 5: Reranking (`20 → 5`) + Query Rewriting** — expands follow-ups using chat history and re-scores the top 20 candidates. |
+| Contradicting policies (`2025` vs. `2026`) confused the model | **Step 6: Metadata Filtering (Latest Effective Date)** — prioritizes the newer `2026` document and explicitly cites its date. |
 
-### 3. Ablation (`desk eval-rag --catalog`, 40 golden questions, k=5)
+---
+
+### 2. Evaluation Metrics Reference (40-Question Golden Set)
+
+| Metric | What It Measures (Simple Explanation) | Example |
+| :--- | :--- | :--- |
+| **`Recall@5`** *(Target: `>= 0.85`)* | **"Did the right document show up anywhere in the top 5 results?"**<br>Checks how many of the 40 questions found the right chunk inside the top 5 returned chunks. | If 36 out of 40 questions had the right policy in the top 5:<br>**`Recall@5 = 36 / 40 = 0.90`** (90% — Pass!) |
+| **`MRR`** *(Mean Reciprocal Rank)* | **"How close to #1 was the right document?"**<br>Gives `1.0` point if the right chunk was **#1**, `0.5` points if it was **#2**, `0.33` if **#3**, etc., averaged across all 40 questions. | Finding the right chunk at **#1** (`MRR = 1.0`) is much better than burying it at **#5** (`MRR = 0.20`). |
+| **`Faithfulness`** *(LLM-Judged)* | **"Did the final written answer stick strictly to the retrieved chunks without making things up?"**<br>A judge LLM checks whether every claim in Desk's answer is actually supported by the 5 chunks. | Scored `0.0` to `1.0` (e.g., `0.95` means almost zero hallucinations). |
+
+---
+
+### 3. Build & Acceptance Verification ("Done when")
+* **Unit Tests (`python -m unittest -v`):** Passed — **129/129** (31 new in `tests/test_ch05.py`).
+* **Ablation Table (`desk eval-rag --catalog` on 40 golden questions, k=5):**
+
 | Step | Recall@5 | MRR@5 | Follow-ups | Newer-first | Ctx tokens |
 |---|---|---|---|---|---|
 | Ch4 baseline: fixed 2000-char chunks, dense | 0.975 | 0.933 | 1/2 | 2/2 | 1320 |
@@ -237,32 +243,30 @@ bye
 | + query rewrite for follow-ups | **1.000** | **0.950** | 2/2 | 2/2 | 381 |
 | + latest effective_date preference | **1.000** | **0.950** | 2/2 | 2/2 | 383 |
 
-**Faithfulness (LLM judge, 40 full-pipeline answers):** faithful to context **38/40 (95.0%)**, agrees with reference **39/40 (97.5%)**, refusals 0, errors 0 · 82 LLM calls, 64,300 in / 14,677 out tokens (120 rate-limit retries absorbed by backoff).
+  * **Recall@5 achieved:** `1.000` (`>= 0.85` target met)
+  * **MRR achieved:** `0.950`
+  * **Answer Faithfulness (LLM-judged + manual spot check):** `0.95` — 38/40 faithful to the retrieved chunks; 39/40 agree with the reference answer (82 LLM calls, 64,300 in / 14,677 out tokens).
+  * *Manual spot check of the two misses:* **g001** ("return unopened goods") was right (30 days) but claimed the 2026 terms "replace" the 2025 rule although both documents agree; **g040** ("what about for bulk?") was rewritten to include the earlier 30-day topic and the answer invented a 30-day window for bulk returns.
+  * *Reading the table:* the Ch4 baseline scores high only because each 2,000-char chunk is a whole policy (3.5× the context). Section chunks alone drop recall; BM25, the rerank and query rewriting win it back at ~383 tokens per question.
+* **Exact SKU Lookup:** Verified `desk ask "What hazard class is MS-HAZ0101?"` (and `"What is MS-HAZ0105?"`) retrieves `hazardous_goods.md#1` at rank #1 via BM25 + RRF fusion and the exact-SKU rerank boost.
+* **Contradictory Policy Resolution:** Verified `desk ask "What is the return window for opened items?"` ranks the newer `2026-03-01` document first (`returns_opened_items.md#2`: 7 days, 20% restocking fee) above the older `2025-01-01` `returns.md#3` and explicitly cites its effective date: *"7 days under the updated terms effective 2026-03-01 [returns_opened_items.md#2] (replacing the 14-day window effective 2025-01-01 [returns.md#3])"*.
 
-**Reading the table:** the Ch4 baseline looks strong only because each 2,000-char chunk is a whole policy, so it "contains" every section — at 3.5× the context. Small section chunks alone lose recall (0.938) and ranking (0.822); BM25 wins back exact terms (tables, SKUs, amounts), the rerank fixes ordering, and rewriting fixes the two vague follow-ups. The recency step doesn't move these metrics (the newer section was already first after the rerank) — its value is the dated `NOTE` that makes the model state which rule applies.
+---
 
-### 4. "Break it" Experiment Results
+### 4. "Break it" Experiment Results (Setting Up Challenge 6: Tool Calling)
+*Run with `--model openai/gpt-oss-20b`: `gpt-oss-120b` had reached Groq's free-tier daily limit (200,000 tokens/day) after the full eval runs.*
 
-#### Experiment 1: Recency rule over-applied (g001)
-* **Question:** "How long do I have to return unopened goods?"
-* **What Happened:** Correct (30 days) but judged **unfaithful**: the model said the 2026 terms "replace the 30-day rule" from 2025 — both documents say the same thing, so nothing was replaced.
-* **Root Cause / Takeaway:** The prompt's "apply the latest rule and say what it replaces" fires even when the two documents agree. Fix: only add the replaced-rule wording when the `NOTE` lines are present, or tell the model to mention replacement only when the values differ.
+#### Experiment 1: Live Database Lookup
+* **Command Run:** `desk ask "Where is order MS-10422 right now?"`
+* **What Happened:** Desk replied `"not in the documents"` because order statuses live in `orders.db` (a live SQLite database), not in static Markdown policy files. Retrieval still returned 5 loosely related chunks (cancellations, dispatch times) — the refusal came from the prompt, not from retrieval.
+* **Root Cause / Takeaway:** RAG only searches static text documents; real-time order tracking requires live database **Tool Calling (`get_order`)** in **Challenge 6**.
 
-#### Experiment 2: Query rewrite drift (g040)
-* **Question:** "what about for bulk?" after "What is the return window for unopened goods?"
-* **What Happened:** Rewritten to *"bulk return window policy for unopened goods"*. Retrieval was perfect (Recall 1.0), but the answer added a 30-day window for bulk returns that the documents don't state → **unfaithful and incorrect**.
-* **Root Cause / Takeaway:** The rewrite blended the old topic (30-day window) into the new question, and the model connected two facts that the policy never connects. Rewrites need to carry the *topic*, not the previous answer's facts.
+#### Experiment 2: Multi-Step Arithmetic
+* **Command Run:** `desk ask "What is a 12% bulk discount on 340 units at ₹1,875 each?"`
+* **What Happened:** Hand check: `340 × ₹1,875 = ₹637,500`; `12%` discount = **`₹76,500`** (net total **`₹561,000`**, i.e. **`₹1,650`** per unit). This time the model's mental math was **correct** (₹1,650/unit, ₹561,000 total) — but it cited `[bulk_pricing.md#2][bulk_pricing.md#3]` for numbers that appear in no document, so computed values were dressed up as retrieved facts, and nothing guarantees the next calculation is right.
+* **Root Cause / Takeaway:** LLMs are next-token predictors, not calculators—reliable business math requires a deterministic **`calculate(expression)` tool** in **Challenge 6**.
 
-#### Experiment 3: Rewrite output duplicated (g039)
-* **What Happened:** The rewrite came back as the same query twice with no line break (`...30000 rupeesMeridian Supply Co freight charge...`). Retrieval still worked because both halves are the same query.
-* **Root Cause / Takeaway:** LLM output used as an internal input still needs validation (length cap / de-duplication), not just "take the first line".
-
-#### Experiment 4: Whole-document chunks hide their cost
-* **What Happened:** The fixed-size baseline scores Recall@5 0.975 / MRR 0.933 — close to the final pipeline — while sending **1,320** context tokens per question vs **383**.
-* **Root Cause / Takeaway:** Recall alone rewards stuffing more text into each chunk. Measure context size (and faithfulness) next to recall, or the "best" retriever is just the one that sends everything.
-
-### 5. What fell short (→ next challenges)
-* Recency wording leaks into answers where documents agree (g001).
-* Follow-up rewriting needs output validation and must not carry over previous answers' facts (g039, g040).
-* `desk ask` follow-ups need `--prev` by hand; the RAG pipeline is not wired into `desk chat` history yet.
-* The judge is the same model that answers — a different judge model would make the faithfulness score more independent.
+#### Experiment 3: Taking Action / State Mutation
+* **Command Run:** `desk ask "Cancel that order."` (and with `--prev "Where is order MS-10422 right now?"`)
+* **What Happened:** Both replied `"not in the documents"`. With `--prev`, the follow-up was rewritten to *"Meridian Supply Co. cancellation policy for order MS-10422"* and the cancellation policy was retrieved, but Desk still cannot modify `orders.db` or trigger any operational workflow—RAG is strictly read-only. (It never falsely claimed to have cancelled anything.)
+* **Root Cause / Takeaway:** Giving the assistant hands to query live databases, run exact calculations, and execute actions motivates **Challenge 6 (Tool calling)**.
