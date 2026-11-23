@@ -10,6 +10,9 @@ CHROMA_DIR = Path(".chroma")
 COLLECTION = "policies"
 REFUSAL = "not in the documents"
 CITATION = re.compile(r"\[([^\[\]\s]+\.md#\d+)\]")
+CHUNK_ID = re.compile(r"[^\s,;†\[\]【】]+\.md#\d+")
+# Any [...] or 【...】 group holding chunk ids, e.g. 【returns.md#1】, 【warranty.md#1†L3-L5】, [a.md#1, b.md#2]
+BRACKET_GROUP = re.compile(r"[\[【]([^\[\]【】\n]*?\.md#\d+[^\[\]【】\n]*)[\]】]")
 
 
 @dataclass
@@ -77,6 +80,11 @@ def build_context(question, hits):
     """User message: the retrieved chunks, each labelled with the id the model must cite, then the question."""
     blocks = "\n\n".join(f"[{h.id}]\n{h.text}" for h in hits)
     return f"Context chunks:\n\n{blocks}\n\nQuestion: {question}"
+
+
+def normalize_citations(answer):
+    """Rewrite gpt-oss style 【returns.md#1】 (and multi-id groups) into the required [returns.md#1][...] form."""
+    return BRACKET_GROUP.sub(lambda m: "".join(f"[{i}]" for i in CHUNK_ID.findall(m.group(1))), answer)
 
 
 def is_refusal(answer):

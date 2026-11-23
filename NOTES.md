@@ -186,6 +186,7 @@ bye
 #### Experiment 2: Citation Format Drift (`【 】` vs `[ ]`)
 * **What Happened:** 4 of 11 answers cited as `【returns.md#1】` (full-width lenticular brackets, gpt-oss's native citation style) despite the prompt requiring `[returns.md#1]`. The citation checker flagged each one: `[citations] warning: answer has no [file.md#N] citations`.
 * **Root Cause / Takeaway:** Prompt instructions alone don't guarantee output format. The model's trained citation habit wins ~36% of the time. Programmatic checking caught it; next step is to normalise `【】` → `[]` or re-prompt on violation (the warning message should also say "wrong citation format" rather than "no citations").
+* **Fix applied:** `rag.normalize_citations()` now rewrites `【returns.md#1】`, `【warranty.md#1†L3-L5】` and grouped `[a.md#1, b.md#2]` into `[returns.md#1][b.md#2]` form before printing and checking. Re-running the 4 affected questions printed `[returns.md#1][returns.md#2]`, `[warranty.md#1]`, `[hazardous_goods.md#1]`, `[returns.md#1]` with **no citation warnings** (98/98 tests pass).
 
 #### Experiment 3: Invented Chunk IDs (smaller model)
 * **Command:** `desk ask "How fast are refunds approved?" --model openai/gpt-oss-20b --temperature 0`

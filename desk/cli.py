@@ -81,8 +81,9 @@ def cmd_ask(args, sleep=None, client=None, retrieve=None):
     except LLMError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
-    print(r.text, flush=True)  # keep the answer above any warning when stdout is piped
-    for problem in rag.citation_problems(r.text, hits):
+    answer = rag.normalize_citations(r.text)
+    print(answer, flush=True)  # keep the answer above any warning when stdout is piped
+    for problem in rag.citation_problems(answer, hits):
         print(f"[citations] warning: {problem}", file=sys.stderr)
     print(footer(r))
     return 0

@@ -158,6 +158,17 @@ class CitationTests(unittest.TestCase):
             self.assertEqual(rag.citation_problems(a, HITS), [], a)
         self.assertFalse(rag.is_refusal("That is not in the documents, but usually 30 days."))
 
+    def test_lenticular_and_grouped_citations_are_normalized(self):
+        cases = {
+            "30 days【returns.md#1】【returns.md#2】.": "30 days[returns.md#1][returns.md#2].",
+            "6 months 【warranty.md#1†L3-L5】": "6 months [warranty.md#1]",
+            "7 days [returns.md#1, returns_opened_items.md#1]": "7 days [returns.md#1][returns_opened_items.md#1]",
+            "already fine [returns.md#1].": "already fine [returns.md#1].",
+            "no citation [sic] here": "no citation [sic] here",
+        }
+        for raw, want in cases.items():
+            self.assertEqual(rag.normalize_citations(raw), want, raw)
+
     def test_context_labels_every_chunk_with_its_id(self):
         ctx = rag.build_context("Return window?", HITS)
         self.assertIn("[returns_opened_items.md#1]\nOpened items", ctx)
@@ -208,6 +219,12 @@ class AskCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("Opened items: 30 days.", out)
         self.assertIn("[citations] warning: answer has no [file.md#N] citations", err)
+
+    def test_lenticular_citations_printed_as_brackets_without_warning(self):
+        code, out, err = self.run_ask(["Return window?"], lambda **kw: response("7 days【returns_opened_items.md#1】"))
+        self.assertEqual(code, 0)
+        self.assertEqual(out.splitlines()[0], "7 days[returns_opened_items.md#1]")
+        self.assertNotIn("[citations]", err)
 
     def test_invented_citation_warns(self):
         _, _, err = self.run_ask(["Return window?"], lambda **kw: response("30 days [policy.md#7]."))
