@@ -27,9 +27,11 @@ desk ask "Suggest a name for a brass valve brand" --temperature 0
 desk ask "Suggest a name for a brass valve brand" --temperature 1
 desk ask "hi" --simulate 429        # forced rate limit: retries after 1s and 2s, then exits non-zero
 desk ask "hi" --simulate timeout
+desk ask "hi" --simulate network
 ```
 Output is the answer followed by a footer: `input tokens | output tokens | latency | est. cost`.
-Only `RateLimitError` (429) and `APITimeoutError` are retried (max 3 attempts, 1s then 2s backoff). Other errors fail immediately with a clear message.
+Rate limits (429), timeouts and network failures (`RateLimitError`, `APITimeoutError`, `APIConnectionError`) are retried (max 3 attempts, 1s then 2s backoff). Other errors (bad key, unknown model, request too large) fail immediately with a clear message.
+Empty questions and `--temperature` outside 0-2 are rejected locally (exit code 2) without calling the API.
 If `desk` is not found, use `python -m desk.cli ask "..."`.
 
 ### Tests (offline, no API key, no network)

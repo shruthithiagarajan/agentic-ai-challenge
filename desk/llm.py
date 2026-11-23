@@ -29,23 +29,28 @@ class Result:
     attempts: int
 
 
+SIMULATED = {"429": "rate limited (429)", "timeout": "request timed out", "network": "could not reach the Groq API (network)"}
+
+
 class SimulatedError(Exception):
     """Used by --simulate to exercise the retry path without calling the API."""
 
     def __init__(self, kind):
         self.kind = kind
-        super().__init__("simulated rate limit (429)" if kind == "429" else "simulated timeout")
+        super().__init__(f"simulated: {SIMULATED[kind]}")
 
 
 def retry_reason(exc):
-    """Return a short reason if exc is retryable (RateLimitError / APITimeoutError), else None."""
+    """Return a short reason if exc is retryable (rate limit, timeout, network), else None."""
     if isinstance(exc, SimulatedError):
-        return "rate limited (429)" if exc.kind == "429" else "request timed out"
+        return SIMULATED[exc.kind]
     names = {c.__name__ for c in type(exc).__mro__}
     if "RateLimitError" in names or getattr(exc, "status_code", None) == 429:
-        return "rate limited (429)"
-    if "APITimeoutError" in names:
-        return "request timed out"
+        return SIMULATED["429"]
+    if "APITimeoutError" in names:  # subclass of APIConnectionError: check first
+        return SIMULATED["timeout"]
+    if "APIConnectionError" in names:
+        return SIMULATED["network"]
     return None
 
 
@@ -56,8 +61,8 @@ def describe(exc):
         return "authentication failed - check GROQ_API_KEY"
     if "NotFoundError" in names:
         return "model not found - check DESK_MODEL / --model"
-    if "APIConnectionError" in names:
-        return "could not reach the Groq API - check your network"
+    if getattr(exc, "status_code", None) == 413:
+        return "question too large for this model's token limit - shorten it or use a model with a higher limit"
     return f"{type(exc).__name__}: {exc}"
 
 

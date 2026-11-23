@@ -5,7 +5,7 @@ Project: **Desk**, the customer-operations assistant for the fictional Meridian 
 ## Commands
 - Install: `pip install -e .`
 - Config: copy `.env.example` to `.env` and fill `GROQ_API_KEY` (and optionally `DESK_MODEL`); loaded via python-dotenv
-- Run: `desk ask "question"` (flags: `--model`, `--temperature`, `--simulate 429|timeout`)
+- Run: `desk ask "question"` (flags: `--model`, `--temperature`, `--simulate 429|timeout|network`)
 - Test (offline, no key): `python -m unittest -v`
 - Live Break it run: `python scripts/break_it.py --write`
 
@@ -20,5 +20,5 @@ Project: **Desk**, the customer-operations assistant for the fictional Meridian 
 ## Challenge 1 definition of done
 - [ ] A general question gets a sensible answer (live)
 - [ ] Usage footer on every call: input tokens, output tokens, latency, est. cost
-- [ ] `--simulate 429` retries (RateLimitError / APITimeoutError only; 1s, 2s backoff, max 3 attempts) then fails with a clear message
+- [ ] `--simulate 429` retries (RateLimitError / APITimeoutError / APIConnectionError, i.e. rate limit, timeout, bad network per the PDF; 1s, 2s backoff, max 3 attempts) then fails with a clear message
 - [ ] Break it results written in `NOTES.md`, then `git tag ch01`

@@ -6,7 +6,23 @@ Status: done. Code + 16 offline tests pass. Live run on Groq `openai/gpt-oss-120
 ### Done-when checklist
 - [x] General question gets a sensible answer (live): "In one sentence, what is an API rate limit?" got a correct one-line answer
 - [x] Usage footer appears on every call (live): `input tokens: 127 | output tokens: 70 | latency: 1.55s | est. cost: n/a` (cost shows n/a until `DESK_PRICE_IN`/`DESK_PRICE_OUT` are set in `.env`)
-- [x] Forced failure retries then fails with a clear message (`--simulate 429`: retries after 1s, then 2s, gives up after 3 attempts, exit code 1; unit-tested too)
+- [x] Forced failure retries then fails with a clear message (`--simulate 429`: retries after 1s, then 2s, gives up after 3 attempts, exit code 1; unit-tested too). A real bad network (proxy to a closed port) also retries 3x, then says "could not reach the Groq API (network)".
+
+### Edge cases (checked live 2026-11-23, each has an offline test)
+| Case | Behaviour | Exit |
+|---|---|---|
+| No question argument | argparse usage error | 2 |
+| Empty / whitespace question | `error: question is empty`, **no API call** | 2 |
+| `--temperature 5` / `-0.1` / `hot` | rejected locally: "must be between 0 and 2" | 2 |
+| Missing `GROQ_API_KEY` | "GROQ_API_KEY is not set" | 1 |
+| Invalid key | "authentication failed - check GROQ_API_KEY" (not retried) | 1 |
+| Unknown model | "model not found - check DESK_MODEL / --model" (not retried) | 1 |
+| 429 / timeout / no network | retried after 1s, 2s; gives up after 3 attempts | 1 |
+| Request too large (40k words, Groq 413 TPM limit 8000) | "question too large for this model's token limit" (not retried) | 1 |
+| Non-English and emoji input/output | works; stdout forced to UTF-8 (Windows cp1252 used to crash) | 0 |
+| Very long question typed in the shell | Windows blocks command lines over about 32k characters before `desk` runs (no stdin input yet) | - |
+
+Also seen: the model claims it can "pull product options from our catalog", which it can't. It's another made-up capability, like the return policy.
 
 ### Break it
 1. `"My name is Ravi"` then `"What is my name?"`: the second call says "I don't have access to that information". **No memory**: each call is stateless, so the model sees only one message.

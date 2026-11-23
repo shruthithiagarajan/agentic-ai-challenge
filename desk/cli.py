@@ -28,7 +28,18 @@ def footer(r, env=os.environ):
     return f"--\ninput tokens: {r.input_tokens} | output tokens: {r.output_tokens} | latency: {r.latency_s:.2f}s | est. cost: {cost_s}"
 
 
+def temperature(value):
+    """argparse type: a float in Groq's accepted range 0-2."""
+    t = float(value)
+    if not 0 <= t <= 2:
+        raise argparse.ArgumentTypeError(f"must be between 0 and 2, got {value}")
+    return t
+
+
 def cmd_ask(args, sleep=None, client=None):
+    if not args.question.strip():
+        print("error: question is empty - try: desk ask \"your question\"", file=sys.stderr)
+        return 2
     model = args.model or os.getenv("DESK_MODEL") or DEFAULT_MODEL
     extra = {"sleep": sleep} if sleep else {}
     try:
@@ -48,8 +59,8 @@ def build_parser():
     a = sub.add_parser("ask", help="send a single question")
     a.add_argument("question")
     a.add_argument("--model", help=f"overrides DESK_MODEL (default {DEFAULT_MODEL})")
-    a.add_argument("--temperature", type=float, help="sampling temperature, e.g. 0 or 1")
-    a.add_argument("--simulate", choices=["429", "timeout"], help="force a failure to test retry logic without calling the API")
+    a.add_argument("--temperature", type=temperature, help="sampling temperature 0-2, e.g. 0 or 1")
+    a.add_argument("--simulate", choices=["429", "timeout", "network"], help="force a failure to test retry logic without calling the API")
     return p
 
 
