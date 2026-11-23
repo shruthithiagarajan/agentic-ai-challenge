@@ -2,7 +2,7 @@ import contextlib, io, os, sys, types, unittest
 from types import SimpleNamespace
 from unittest import mock
 
-from desk import cli, llm
+from desk import cli, llm, rag
 from desk.llm import LLMError, SimulatedError, call_with_retry
 
 
@@ -119,7 +119,8 @@ class CliTests(unittest.TestCase):
         args = cli.build_parser().parse_args(argv)
         out, err = io.StringIO(), io.StringIO()
         with mock.patch.dict(os.environ, env or {}, clear=True), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = cli.cmd_ask(args, sleep=(sleeps.append if sleeps is not None else None), client=client)
+            code = cli.cmd_ask(args, sleep=(sleeps.append if sleeps is not None else None), client=client,
+                               retrieve=lambda q: [rag.Hit("policy.md#1", "stub chunk", 0.1)])  # Ch4: ask retrieves first
         return code, out.getvalue(), err.getvalue()
 
     def test_footer_fields_and_na_cost(self):

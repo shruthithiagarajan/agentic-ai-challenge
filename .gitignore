@@ -13,3 +13,4 @@ build/
 # desk extract outputs (regenerated each run)
 data/results.jsonl
 data/needs_review.jsonl
+.chroma/

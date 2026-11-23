@@ -141,3 +141,63 @@ bye
 * **What Happened:** Thanks to the Challenge 2 system prompt guardrail, Desk refused cleanly (*"I’m sorry—I don’t have the specific details of Meridian’s return policy for opened items..."*) instead of fabricating a fake policy.
 * **Root Cause / Takeaway:** While guardrails prevent hallucinations, Desk cannot answer real business policy questions until we index and retrieve `data/policies/` via **Challenge 4 (Naive RAG)**.
 
+
+## Challenge 4: Naive RAG (`ch04`)
+**Provider / Model:** Groq (`openai/gpt-oss-120b`) · **Vector DB:** ChromaDB 1.5.9 (local, `.chroma/`) · **Embeddings:** Chroma default `all-MiniLM-L6-v2` (local ONNX, no API key)
+
+### 1. Build & Acceptance Verification ("Done when")
+* **Unit Tests (`python -m unittest -v`):** Passed — **96/96 tests** (29 new in `tests/test_ch04.py`) using a fake Chroma collection and a fake SDK: fixed-size chunking + overlap, 1-based chunk IDs, idempotent re-ingest, stale-chunk deletion, top-4 retrieval, citation checks, `--debug` output, `"not in the documents"` refusal, empty-index error.
+* **Corpus:** 14 policy docs in `meridian_desk_data/policies/` (5 Markdown tables; `returns.md` 2025-01-01 contradicts `returns_opened_items.md` 2026-03-01).
+* **Chunking:** fixed-size 2,000 chars (~500 tokens) with 200-char (~50 token) overlap → **15 chunks** (only `returns.md` splits into `#1`/`#2`; every other doc fits in one chunk).
+* **`desk ingest` idempotency:**
+  * Run 1: `loaded 14 files ... stored 15 chunks (15 new, 0 stale removed) ... now holds 15 chunks`
+  * Run 2: `stored 15 chunks (0 new, 0 stale removed) ... now holds 15 chunks` — 15 IDs, 15 unique, zero duplicates.
+* **`desk ask` before `ingest`:** `error: no policy documents are indexed - run desk ingest first` (no LLM call).
+* **`--debug`:** prints the top-4 chunk IDs, cosine distance/similarity and a snippet before the LLM call, e.g. `[returns_opened_items.md#1] distance 0.553 (similarity 0.447)`.
+* **Ch1 flags still work:** `--simulate 429` retries 1s → 2s then exits 1; `--model` / `--temperature` honoured; usage footer on every answer.
+
+### 2. Live Q&A Results (questions from `evals/golden_retrieval.jsonl`)
+| Question | Answer (cited) | Verdict |
+|---|---|---|
+| Return window for opened items? | 7 days [returns_opened_items.md#1] **and** 14 days [returns.md#1] | ⚠️ Reports both, does not say the 2026 doc supersedes |
+| Return unopened goods? | 30 days 【returns.md#1】 | ✅ content / ⚠️ wrong bracket style |
+| How to raise a return request? | Email returns@meridiansupply.example with order ID, SKU, qty, reason [returns.md#1] | ✅ (omits "RMA within 2 business days") |
+| Who pays return freight for a wrong item? | Meridian [returns.md#1] | ✅ |
+| Refund time after inspection? | 7 business days 【returns.md#1】 | ✅ content / ⚠️ bracket style |
+| What does the warranty not cover? | Misuse, installation, wear & tear, consequential loss [warranty.md#1] | ✅ |
+| Which carriers? | BlueDart, Delhivery, DTDC, VRL, SafeHaul [shipping.md#1] | ✅ |
+| Warranty for bearings? | 6 months 【warranty.md#1】 | ✅ content / ⚠️ bracket style |
+| When is freight free? | Orders ≥ ₹25,000 [shipping.md#1] (+ return-freight note) | ✅ (table lookup) |
+| Freight on ₹18,000? | ₹450 [shipping.md#1] | ✅ (table lookup) |
+| What is MS-HAZ0105? | Hydrochloric Acid 30% 25 L Carboy, class 8 【hazardous_goods.md#1】 | ✅ content / ⚠️ bracket style |
+| Who is Meridian's CEO? | `not in the documents` | ✅ refusal |
+| Can lithium batteries ship by air? | `not in the documents` | ✅ defensible — docs never classify lithium batteries as hazardous |
+| 500-unit discount? | 15% [bulk_pricing.md#1] | ✅ (table lookup) |
+
+**Score:** facts correct on all answerable questions; **4/11 broke the citation format**, **1 contradiction not resolved**.
+
+### 3. "Break it" Experiment Results
+
+#### Experiment 1: Contradicting Documents
+* **Command:** `desk ask "What is the return window for opened items?"`
+* **What Happened:** Retrieved both `returns_opened_items.md#1` (7 days, 2026-03-01) and `returns.md#1` (14 days, 2025-01-01) and reported both as equally valid.
+* **Root Cause / Takeaway:** Naive RAG treats every chunk as equally true; nothing in retrieval or the prompt ranks by `effective_date`. A customer could be told the outdated 14-day window. Fix: carry `effective_date` as chunk metadata and prefer/flag the newest document.
+
+#### Experiment 2: Citation Format Drift (`【 】` vs `[ ]`)
+* **What Happened:** 4 of 11 answers cited as `【returns.md#1】` (full-width lenticular brackets, gpt-oss's native citation style) despite the prompt requiring `[returns.md#1]`. The citation checker flagged each one: `[citations] warning: answer has no [file.md#N] citations`.
+* **Root Cause / Takeaway:** Prompt instructions alone don't guarantee output format. The model's trained citation habit wins ~36% of the time. Programmatic checking caught it; next step is to normalise `【】` → `[]` or re-prompt on violation (the warning message should also say "wrong citation format" rather than "no citations").
+
+#### Experiment 3: Invented Chunk IDs (smaller model)
+* **Command:** `desk ask "How fast are refunds approved?" --model openai/gpt-oss-20b --temperature 0`
+* **What Happened:** Cited `[refund_approval.md#2]` and `[refund_approval.md#3]`, which don't exist (that file is a single chunk, `#1`). The checker flagged: `cites chunks that were not retrieved: refund_approval.md#2, refund_approval.md#3`.
+* **Root Cause / Takeaway:** The model converted the document's *section numbers* (`## 2`, `## 3`) into chunk IDs. Citations look trustworthy but can be fabricated, so they must be validated against the retrieved set.
+
+#### Experiment 4: Chunk Size vs Document Size
+* **What Happened:** At 2,000 chars, 13 of 14 policies became a single chunk, so "retrieval" is effectively whole-document retrieval. Low similarity scores (0.11–0.51) still pulled irrelevant docs into the top 4 (e.g. `hazardous_goods.md` for a returns question), and each call cost ~1,200–1,600 input tokens.
+* **Root Cause / Takeaway:** Fixed-size chunking ignores document structure (sections, tables) and there is no relevance threshold. This motivates **Challenge 5**: structure-aware chunking, measuring recall@k / MRR against `golden_retrieval.jsonl`, and a minimum-similarity cut-off.
+
+### 4. What fell short (→ Challenge 5)
+* No preference for the newest policy when documents conflict.
+* Citation format not enforced (only warned).
+* No retrieval quality measurement yet (recall@k, MRR).
+* Single-shot `ask` can't handle follow-ups like "and for 30,000?" (no chat history in RAG).
