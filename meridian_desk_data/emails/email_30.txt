@@ -1,0 +1,14 @@
+From: Sasmita Mohanty <mohanty@kalinga.example>
+To: orders@meridiansupply.example
+Date: Sun, 04 Oct 2026 11:42:00 +0530
+Subject: MSDS and invoice copies
+Message-ID: <email_30.9413969@mail.example>
+
+Dear team,
+
+Please send the safety data sheet for MS-HAZ0101 (acetone) - our auditors are asking for it - and duplicate GST invoice copies for our September purchases.
+
+Regards,
+Sasmita Mohanty
+Kalinga Fertilizers, Bhubaneswar
++91 00000 88029

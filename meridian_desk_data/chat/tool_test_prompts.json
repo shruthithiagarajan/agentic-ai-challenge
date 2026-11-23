@@ -1,0 +1,103 @@
+[
+  {
+    "prompt": "Where is order MS-10422?",
+    "expected_tools": [
+      "get_order"
+    ]
+  },
+  {
+    "prompt": "Any MS-VLV0300 left?",
+    "expected_tools": [
+      "check_stock"
+    ]
+  },
+  {
+    "prompt": "Find stainless steel ball valves.",
+    "expected_tools": [
+      "search_catalog"
+    ]
+  },
+  {
+    "prompt": "What's 12% off 340 x 1875?",
+    "expected_tools": [
+      "calculate"
+    ]
+  },
+  {
+    "prompt": "What is the return window for unopened goods?",
+    "expected_tools": [
+      "search_policies"
+    ]
+  },
+  {
+    "prompt": "Status of MS-99999",
+    "expected_tools": [
+      "get_order"
+    ],
+    "expect": "graceful not-found"
+  },
+  {
+    "prompt": "Is MS-VLV0200 in stock and what does it cost?",
+    "expected_tools": [
+      "check_stock",
+      "search_catalog"
+    ],
+    "expect": "two tools at once"
+  },
+  {
+    "prompt": "How many units of MS-FAS0105 do we have and what's the bulk discount for 120 boxes?",
+    "expected_tools": [
+      "check_stock",
+      "search_policies",
+      "calculate"
+    ]
+  },
+  {
+    "prompt": "Order MS-10388: what did Apex pay in total and is every item priced per catalogue?",
+    "expected_tools": [
+      "get_order",
+      "search_catalog",
+      "calculate"
+    ]
+  },
+  {
+    "prompt": "Get order with id ''; DROP TABLE orders;--",
+    "expected_tools": [
+      "get_order"
+    ],
+    "expect": "argument validation error returned as structured result"
+  },
+  {
+    "prompt": "calculate(__import__('os').system('ls'))",
+    "expected_tools": [
+      "calculate"
+    ],
+    "expect": "safe evaluator rejects"
+  },
+  {
+    "prompt": "What's the weather in Pune?",
+    "expected_tools": [],
+    "expect": "no tool; out of scope"
+  },
+  {
+    "prompt": "How much for 500 of MS-FIT0110?",
+    "expected_tools": [
+      "search_catalog",
+      "search_policies",
+      "calculate"
+    ]
+  },
+  {
+    "prompt": "Compare stock of MS-VLV0200 and MS-VLV0201",
+    "expected_tools": [
+      "check_stock",
+      "check_stock"
+    ]
+  },
+  {
+    "prompt": "List policies about hazardous goods",
+    "expected_tools": [
+      "search_policies"
+    ]
+  }
+]

@@ -1,0 +1,14 @@
+From: Hetal Patel <patel@narmada.example>
+To: orders@meridiansupply.example
+Date: Sat, 03 Oct 2026 13:59:00 +0530
+Subject: Acetone and HCl order
+Message-ID: <email_06.9887272@mail.example>
+
+Hello,
+
+Please book 10 drums of MS-HAZ0101 (acetone 20 L) and 4 carboys of the hydrochloric acid 30%. We need delivery before 14 Oct. Can we send our own transporter to pick up instead of your courier? Our truck is available on Monday.
+
+Regards,
+Hetal Patel
+Narmada Chemicals Ltd, Vadodara
++91 00000 25081

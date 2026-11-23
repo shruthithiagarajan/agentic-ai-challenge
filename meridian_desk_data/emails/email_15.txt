@@ -1,0 +1,14 @@
+From: Mahendra Rathore <rathore@thar.example>
+To: orders@meridiansupply.example
+Date: Sun, 04 Oct 2026 17:44:00 +0530
+Subject: MS-10490 - dispatch?
+Message-ID: <email_15.9201954@mail.example>
+
+Hello,
+
+Can you tell me if MS-10490 has been dispatched? If it has not left your warehouse by Friday please cancel it, we'll buy locally. Also what is your credit period for us?
+
+Regards,
+Mahendra Rathore
+Thar Mining Equipment, Jodhpur
++91 00000 75162

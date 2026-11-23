@@ -1,0 +1,47 @@
+{
+  "note": "Fake tokens for local testing only.",
+  "tokens": [
+    {
+      "token": "tok_read_7f3a91c2",
+      "scopes": [
+        "orders:read",
+        "catalog:read",
+        "policies:read"
+      ],
+      "expires": "2027-01-01T00:00:00Z",
+      "expect": "can call read tools; write tools rejected 403"
+    },
+    {
+      "token": "tok_rw_b21d04e8",
+      "scopes": [
+        "orders:read",
+        "catalog:read",
+        "policies:read",
+        "email:draft",
+        "orders:write"
+      ],
+      "expires": "2027-01-01T00:00:00Z",
+      "expect": "can call all tools"
+    },
+    {
+      "token": "tok_expired_0c9e55aa",
+      "scopes": [
+        "orders:read"
+      ],
+      "expires": "2025-01-01T00:00:00Z",
+      "expect": "401 expired"
+    },
+    {
+      "token": "tok_invalid_zzz",
+      "scopes": [],
+      "expires": null,
+      "expect": "401 invalid"
+    },
+    {
+      "token": null,
+      "scopes": [],
+      "expires": null,
+      "expect": "401 missing"
+    }
+  ]
+}

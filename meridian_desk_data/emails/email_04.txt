@@ -1,0 +1,14 @@
+From: Neha Kulkarni <kulkarni@orion.example>
+To: orders@meridiansupply.example
+Date: Fri, 02 Oct 2026 09:58:00 +0530
+Subject: bearings bulk order
+Message-ID: <email_04.2786380@mail.example>
+
+Hi,
+
+We want to place an order for 300 pcs of 6205 2RS sealed bearings. Since this is a big quantity, does the bulk discount apply and what would the unit price be? If yes, go ahead and book it, deliver to Chakan by 20th.
+
+Regards,
+Neha Kulkarni
+Orion Auto Components, Chakan
++91 00000 41521

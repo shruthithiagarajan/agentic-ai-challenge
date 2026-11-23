@@ -1,0 +1,13 @@
+{
+  "refund_executor": "MOCK - write to orders.db.refund_ledger with idempotency_key = request_id + ':' + order_id; second write with same key must be a no-op",
+  "email_critique_cases": [
+    {
+      "case": "draft too casual, promises more than policy allows",
+      "expected_critique": "Remove promise of full refund; cite refund_approval.md#2"
+    },
+    {
+      "case": "draft omits RMA instructions",
+      "expected_critique": "Add RMA process from returns.md#4"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+[
+  {
+    "order_id": "MS-10245",
+    "sku": "MS-LUB0102",
+    "quantity": 18,
+    "catalog_price": 1450,
+    "expected_unit_price": 1450.0,
+    "charged_price": 1595.0,
+    "mismatch_type": "overcharge",
+    "note": "Charged above catalogue price"
+  },
+  {
+    "order_id": "MS-10421",
+    "sku": "MS-BRG0102",
+    "quantity": 19,
+    "catalog_price": 210,
+    "expected_unit_price": 210.0,
+    "charged_price": 222.6,
+    "mismatch_type": "overcharge",
+    "note": "Charged above catalogue price"
+  },
+  {
+    "order_id": "MS-10428",
+    "sku": "MS-FAS0436",
+    "quantity": 13,
+    "catalog_price": 9665,
+    "expected_unit_price": 9665.0,
+    "charged_price": 8505.2,
+    "mismatch_type": "undercharge",
+    "note": "Charged below catalogue price"
+  },
+  {
+    "order_id": "MS-10287",
+    "sku": "MS-PPE0104",
+    "quantity": 33,
+    "catalog_price": 340,
+    "expected_unit_price": 340.0,
+    "charged_price": 312.8,
+    "mismatch_type": "undercharge",
+    "note": "Charged below catalogue price"
+  },
+  {
+    "order_id": "MS-10348",
+    "sku": "MS-FAS0688",
+    "quantity": 35,
+    "catalog_price": 965,
+    "expected_unit_price": 965.0,
+    "charged_price": 897.45,
+    "mismatch_type": "stale_price",
+    "note": "Charged a stale (pre-revision) price"
+  },
+  {
+    "order_id": "MS-10195",
+    "sku": "MS-FAS0551",
+    "quantity": 10,
+    "catalog_price": 4835,
+    "expected_unit_price": 4835.0,
+    "charged_price": 5173.45,
+    "mismatch_type": "stale_price",
+    "note": "Charged a stale (pre-revision) price"
+  },
+  {
+    "order_id": "MS-10033",
+    "sku": "MS-FIT0831",
+    "quantity": 30,
+    "catalog_price": 335,
+    "expected_unit_price": 335.0,
+    "charged_price": 324.95,
+    "mismatch_type": "bad_discount",
+    "note": "Bulk discount applied wrongly (qty 30, tier should give 0%, charged 3%)"
+  },
+  {
+    "order_id": "MS-10074",
+    "sku": "MS-FIT0387",
+    "quantity": 120,
+    "catalog_price": 115,
+    "expected_unit_price": 108.1,
+    "charged_price": 101.2,
+    "mismatch_type": "bad_discount",
+    "note": "Bulk discount applied wrongly (qty 120, tier should give 6%, charged 12%)"
+  },
+  {
+    "order_id": "MS-10337",
+    "sku": "MS-VLV0290",
+    "quantity": 300,
+    "catalog_price": 205,
+    "expected_unit_price": 180.4,
+    "charged_price": 192.7,
+    "mismatch_type": "bad_discount",
+    "note": "Bulk discount applied wrongly (qty 300, tier should give 12%, charged 6%)"
+  },
+  {
+    "order_id": "MS-10145",
+    "sku": "MS-FIT0387",
+    "quantity": 60,
+    "catalog_price": 115,
+    "expected_unit_price": 111.55,
+    "charged_price": 115.0,
+    "mismatch_type": "bad_discount",
+    "note": "Bulk discount applied wrongly (qty 60, tier should give 3%, charged 0%)"
+  }
+]

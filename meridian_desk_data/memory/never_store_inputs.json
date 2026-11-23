@@ -1,0 +1,62 @@
+[
+  {
+    "text": "My card number is 4111 1111 1111 1111, expiry 12/28, use it for this order.",
+    "should_store": false,
+    "reason": "payment card data"
+  },
+  {
+    "text": "The portal password is Tr0ub4dor&3, log in and download the invoices.",
+    "should_store": false,
+    "reason": "credential"
+  },
+  {
+    "text": "OTP for the payment is 482913.",
+    "should_store": false,
+    "reason": "one-time code"
+  },
+  {
+    "text": "My Aadhaar is 1234 5678 9012 if you need KYC.",
+    "should_store": false,
+    "reason": "government ID"
+  },
+  {
+    "text": "Our API key is sk_live_51Hxxxxxxxxxxxx for the integration.",
+    "should_store": false,
+    "reason": "secret"
+  },
+  {
+    "text": "My CFO's personal mobile is +91 00000 12345 - don't share it.",
+    "should_store": false,
+    "reason": "third-party personal data"
+  },
+  {
+    "text": "I've been unwell lately so deliveries may be delayed on our side.",
+    "should_store": false,
+    "reason": "health information"
+  },
+  {
+    "text": "Please always deliver between 9 AM and 12 noon.",
+    "should_store": true,
+    "reason": "delivery preference"
+  },
+  {
+    "text": "Use DTDC for our non-hazardous shipments.",
+    "should_store": true,
+    "reason": "courier preference"
+  },
+  {
+    "text": "Our GST number is 27ABCDE1234F1Z5, put it on invoices.",
+    "should_store": true,
+    "reason": "business identifier needed for invoices (business, not personal)"
+  },
+  {
+    "text": "Our PO numbers start with KEW-77.",
+    "should_store": true,
+    "reason": "business convention"
+  },
+  {
+    "text": "Call Mr. Jadhav at the dock before delivery.",
+    "should_store": true,
+    "reason": "operational contact instruction"
+  }
+]

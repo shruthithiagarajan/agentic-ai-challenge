@@ -1,0 +1,14 @@
+From: M. Sundaram <sundaram@sundaram.example>
+To: orders@meridiansupply.example
+Date: Fri, 02 Oct 2026 18:06:00 +0530
+Subject: Wrong material received - MS-10398
+Message-ID: <email_17.3473125@mail.example>
+
+Hi,
+
+For MS-10398 we ordered PTFE Thread Seal Tape (pack of 10) (MS-GSK0110) x 28 but what arrived is a different item. This is the wrong material for our application. Please arrange the correct item and take back the wrong one.
+
+Regards,
+M. Sundaram
+Sundaram Fabricators, Chennai
++91 00000 76494

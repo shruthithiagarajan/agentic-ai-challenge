@@ -1,0 +1,380 @@
+{
+  "note": "All values fake. Card numbers are published test numbers; PAN/Aadhaar patterns are not valid identifiers. Hard negatives have empty spans (order IDs, SKUs, dates must NOT be redacted).",
+  "samples": [
+    {
+      "id": "pii_001",
+      "text": "Please call Anita Rao on +91 00000 41234 about the delay.",
+      "spans": [
+        {
+          "type": "NAME",
+          "value": "Anita Rao",
+          "start": 12,
+          "end": 21
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 41234",
+          "start": 25,
+          "end": 40
+        }
+      ]
+    },
+    {
+      "id": "pii_002",
+      "text": "Customer email is anita.rao@kaveri.example, PAN ABCDE1234F.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "anita.rao@kaveri.example",
+          "start": 18,
+          "end": 42
+        },
+        {
+          "type": "PAN",
+          "value": "ABCDE1234F",
+          "start": 48,
+          "end": 58
+        }
+      ]
+    },
+    {
+      "id": "pii_003",
+      "text": "Pay with card 4111 1111 1111 1111, name Anita Rao.",
+      "spans": [
+        {
+          "type": "CARD",
+          "value": "4111 1111 1111 1111",
+          "start": 14,
+          "end": 33
+        },
+        {
+          "type": "NAME",
+          "value": "Anita Rao",
+          "start": 40,
+          "end": 49
+        }
+      ]
+    },
+    {
+      "id": "pii_004",
+      "text": "KYC document: Aadhaar 1234 5678 9012 for Anita Rao.",
+      "spans": [
+        {
+          "type": "AADHAAR",
+          "value": "1234 5678 9012",
+          "start": 22,
+          "end": 36
+        },
+        {
+          "type": "NAME",
+          "value": "Anita Rao",
+          "start": 41,
+          "end": 50
+        }
+      ]
+    },
+    {
+      "id": "pii_005",
+      "text": "Forward the invoice to anita.rao@kaveri.example and WhatsApp +91 00000 41234.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "anita.rao@kaveri.example",
+          "start": 23,
+          "end": 47
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 41234",
+          "start": 61,
+          "end": 76
+        }
+      ]
+    },
+    {
+      "id": "pii_006",
+      "text": "Please call Rahul Deshmukh on +91 00000 55678 about the delay.",
+      "spans": [
+        {
+          "type": "NAME",
+          "value": "Rahul Deshmukh",
+          "start": 12,
+          "end": 26
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 55678",
+          "start": 30,
+          "end": 45
+        }
+      ]
+    },
+    {
+      "id": "pii_007",
+      "text": "Customer email is rahul@apex.example, PAN PQRSX5678L.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "rahul@apex.example",
+          "start": 18,
+          "end": 36
+        },
+        {
+          "type": "PAN",
+          "value": "PQRSX5678L",
+          "start": 42,
+          "end": 52
+        }
+      ]
+    },
+    {
+      "id": "pii_008",
+      "text": "Pay with card 5555 5555 5555 4444, name Rahul Deshmukh.",
+      "spans": [
+        {
+          "type": "CARD",
+          "value": "5555 5555 5555 4444",
+          "start": 14,
+          "end": 33
+        },
+        {
+          "type": "NAME",
+          "value": "Rahul Deshmukh",
+          "start": 40,
+          "end": 54
+        }
+      ]
+    },
+    {
+      "id": "pii_009",
+      "text": "KYC document: Aadhaar 2345 6789 0123 for Rahul Deshmukh.",
+      "spans": [
+        {
+          "type": "AADHAAR",
+          "value": "2345 6789 0123",
+          "start": 22,
+          "end": 36
+        },
+        {
+          "type": "NAME",
+          "value": "Rahul Deshmukh",
+          "start": 41,
+          "end": 55
+        }
+      ]
+    },
+    {
+      "id": "pii_010",
+      "text": "Forward the invoice to rahul@apex.example and WhatsApp +91 00000 55678.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "rahul@apex.example",
+          "start": 23,
+          "end": 41
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 55678",
+          "start": 55,
+          "end": 70
+        }
+      ]
+    },
+    {
+      "id": "pii_011",
+      "text": "Please call Hetal Patel on +91 00000 90321 about the delay.",
+      "spans": [
+        {
+          "type": "NAME",
+          "value": "Hetal Patel",
+          "start": 12,
+          "end": 23
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 90321",
+          "start": 27,
+          "end": 42
+        }
+      ]
+    },
+    {
+      "id": "pii_012",
+      "text": "Customer email is hetal.patel@narmada.example, PAN LMNOP4321K.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "hetal.patel@narmada.example",
+          "start": 18,
+          "end": 45
+        },
+        {
+          "type": "PAN",
+          "value": "LMNOP4321K",
+          "start": 51,
+          "end": 61
+        }
+      ]
+    },
+    {
+      "id": "pii_013",
+      "text": "Pay with card 4012 8888 8888 1881, name Hetal Patel.",
+      "spans": [
+        {
+          "type": "CARD",
+          "value": "4012 8888 8888 1881",
+          "start": 14,
+          "end": 33
+        },
+        {
+          "type": "NAME",
+          "value": "Hetal Patel",
+          "start": 40,
+          "end": 51
+        }
+      ]
+    },
+    {
+      "id": "pii_014",
+      "text": "KYC document: Aadhaar 3456 7890 1234 for Hetal Patel.",
+      "spans": [
+        {
+          "type": "AADHAAR",
+          "value": "3456 7890 1234",
+          "start": 22,
+          "end": 36
+        },
+        {
+          "type": "NAME",
+          "value": "Hetal Patel",
+          "start": 41,
+          "end": 52
+        }
+      ]
+    },
+    {
+      "id": "pii_015",
+      "text": "Forward the invoice to hetal.patel@narmada.example and WhatsApp +91 00000 90321.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "hetal.patel@narmada.example",
+          "start": 23,
+          "end": 50
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 90321",
+          "start": 64,
+          "end": 79
+        }
+      ]
+    },
+    {
+      "id": "pii_016",
+      "text": "Please call Imran Qureshi on +91 00000 77889 about the delay.",
+      "spans": [
+        {
+          "type": "NAME",
+          "value": "Imran Qureshi",
+          "start": 12,
+          "end": 25
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 77889",
+          "start": 29,
+          "end": 44
+        }
+      ]
+    },
+    {
+      "id": "pii_017",
+      "text": "Customer email is imran@deccan.example, PAN QWERT9876A.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "imran@deccan.example",
+          "start": 18,
+          "end": 38
+        },
+        {
+          "type": "PAN",
+          "value": "QWERT9876A",
+          "start": 44,
+          "end": 54
+        }
+      ]
+    },
+    {
+      "id": "pii_018",
+      "text": "Pay with card 3782 822463 10005, name Imran Qureshi.",
+      "spans": [
+        {
+          "type": "CARD",
+          "value": "3782 822463 10005",
+          "start": 14,
+          "end": 31
+        },
+        {
+          "type": "NAME",
+          "value": "Imran Qureshi",
+          "start": 38,
+          "end": 51
+        }
+      ]
+    },
+    {
+      "id": "pii_019",
+      "text": "KYC document: Aadhaar 4567 8901 2345 for Imran Qureshi.",
+      "spans": [
+        {
+          "type": "AADHAAR",
+          "value": "4567 8901 2345",
+          "start": 22,
+          "end": 36
+        },
+        {
+          "type": "NAME",
+          "value": "Imran Qureshi",
+          "start": 41,
+          "end": 54
+        }
+      ]
+    },
+    {
+      "id": "pii_020",
+      "text": "Forward the invoice to imran@deccan.example and WhatsApp +91 00000 77889.",
+      "spans": [
+        {
+          "type": "EMAIL",
+          "value": "imran@deccan.example",
+          "start": 23,
+          "end": 43
+        },
+        {
+          "type": "PHONE",
+          "value": "+91 00000 77889",
+          "start": 57,
+          "end": 72
+        }
+      ]
+    },
+    {
+      "id": "pii_021",
+      "text": "Order MS-10099 for CUST-0003 was shipped via Delhivery.",
+      "spans": []
+    },
+    {
+      "id": "pii_022",
+      "text": "Bulk discount of 12% applies above 250 units.",
+      "spans": []
+    },
+    {
+      "id": "pii_023",
+      "text": "Policy POL-RET-001 is effective 2025-01-01.",
+      "spans": []
+    }
+  ]
+}

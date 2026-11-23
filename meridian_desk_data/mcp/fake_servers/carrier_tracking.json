@@ -1,0 +1,186 @@
+{
+  "server": "carrier_tracking",
+  "note": "Stub manifest only - implement as dummy MCP server returning canned text.",
+  "tools": [
+    {
+      "name": "track_shipment",
+      "description": "Track a consignment by AWB number and return its latest scan events.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "awb": {
+            "type": "string",
+            "description": "awb"
+          }
+        },
+        "required": [
+          "awb"
+        ]
+      }
+    },
+    {
+      "name": "get_rate_quote",
+      "description": "Quote freight for a weight and pincode pair.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from_pincode": {
+            "type": "string",
+            "description": "from pincode"
+          },
+          "to_pincode": {
+            "type": "string",
+            "description": "to pincode"
+          },
+          "weight_kg": {
+            "type": "string",
+            "description": "weight kg"
+          }
+        },
+        "required": [
+          "from_pincode"
+        ]
+      }
+    },
+    {
+      "name": "schedule_pickup",
+      "description": "Schedule a pickup at a warehouse for a date.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "address"
+          },
+          "date": {
+            "type": "string",
+            "description": "date"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      }
+    },
+    {
+      "name": "cancel_pickup",
+      "description": "Cancel a scheduled pickup.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pickup_id": {
+            "type": "string",
+            "description": "pickup id"
+          }
+        },
+        "required": [
+          "pickup_id"
+        ]
+      }
+    },
+    {
+      "name": "list_service_pincodes",
+      "description": "List pincodes serviced by a carrier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carrier": {
+            "type": "string",
+            "description": "carrier"
+          }
+        },
+        "required": [
+          "carrier"
+        ]
+      }
+    },
+    {
+      "name": "get_proof_of_delivery",
+      "description": "Return the signed proof of delivery for an AWB.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "awb": {
+            "type": "string",
+            "description": "awb"
+          }
+        },
+        "required": [
+          "awb"
+        ]
+      }
+    },
+    {
+      "name": "create_shipment",
+      "description": "Create a shipment and AWB.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "order id"
+          },
+          "carrier": {
+            "type": "string",
+            "description": "carrier"
+          }
+        },
+        "required": [
+          "order_id"
+        ]
+      }
+    },
+    {
+      "name": "print_label",
+      "description": "Generate a shipping label PDF.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "awb": {
+            "type": "string",
+            "description": "awb"
+          }
+        },
+        "required": [
+          "awb"
+        ]
+      }
+    },
+    {
+      "name": "get_carrier_status",
+      "description": "Return carrier network status and delays.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carrier": {
+            "type": "string",
+            "description": "carrier"
+          }
+        },
+        "required": [
+          "carrier"
+        ]
+      }
+    },
+    {
+      "name": "estimate_transit_time",
+      "description": "Estimate transit days between two pincodes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from_pincode": {
+            "type": "string",
+            "description": "from pincode"
+          },
+          "to_pincode": {
+            "type": "string",
+            "description": "to pincode"
+          }
+        },
+        "required": [
+          "from_pincode"
+        ]
+      }
+    }
+  ]
+}

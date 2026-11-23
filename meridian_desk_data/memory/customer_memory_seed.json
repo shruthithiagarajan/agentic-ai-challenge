@@ -1,0 +1,62 @@
+[
+  {
+    "customer_id": "CUST-0003",
+    "memories": [
+      {
+        "fact": "Prefers Delhivery for shipments.",
+        "source_session": "2026-09-12",
+        "confidence": "high"
+      },
+      {
+        "fact": "Receiving dock closed 1-2 PM.",
+        "source_session": "2026-08-30",
+        "confidence": "medium"
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-0001",
+    "memories": [
+      {
+        "fact": "Account manager is Priya Menon. Escalate delays to her.",
+        "source_session": "2026-09-02",
+        "confidence": "high"
+      },
+      {
+        "fact": "Wants apologies to quote the policy clause.",
+        "source_session": "2026-09-20",
+        "confidence": "high"
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-0005",
+    "memories": [
+      {
+        "fact": "Only accepts hazardous goods on weekdays before 4 PM.",
+        "source_session": "2026-08-15",
+        "confidence": "high"
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-0008",
+    "memories": [
+      {
+        "fact": "PO numbers must appear on every invoice (format PO-####).",
+        "source_session": "2026-09-01",
+        "confidence": "high"
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-0011",
+    "memories": [
+      {
+        "fact": "Orders are usually for bearings in bulk (>250).",
+        "source_session": "2026-07-22",
+        "confidence": "medium"
+      }
+    ]
+  }
+]

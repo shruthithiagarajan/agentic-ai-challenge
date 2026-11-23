@@ -1,0 +1,28 @@
+{
+  "routes": {
+    "classification": {
+      "model": "SMALL_MODEL",
+      "fallbacks": [
+        "ALT_SMALL_MODEL"
+      ]
+    },
+    "extraction": {
+      "model": "SMALL_MODEL",
+      "fallbacks": [
+        "ALT_SMALL_MODEL"
+      ]
+    },
+    "planning": {
+      "model": "STRONG_MODEL",
+      "fallbacks": [
+        "ALT_STRONG_MODEL"
+      ]
+    },
+    "judge": {
+      "model": "STRONG_MODEL",
+      "fallbacks": []
+    }
+  },
+  "quality_gate": "Pass rate on evals/dataset.jsonl must stay within 2 points of the all-strong-model baseline",
+  "note": "Replace placeholders with your provider's model IDs."
+}

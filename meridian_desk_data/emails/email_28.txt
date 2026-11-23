@@ -1,0 +1,14 @@
+From: Rohan Mehta <rohan@triveni-ent.example>
+To: orders@meridiansupply.example
+Date: Thu, 01 Oct 2026 09:10:00 +0530
+Subject: New customer enquiry - credit and catalogue
+Message-ID: <email_28.3755636@mail.example>
+
+Hello,
+
+We run a fabrication unit in Indore and are looking for a regular supplier of valves, fittings and PPE. Could you send your latest catalogue and explain what credit terms you offer to new customers?
+
+Thanks,
+Rohan Mehta
+Triveni Enterprises, Indore
++91 00000 83413

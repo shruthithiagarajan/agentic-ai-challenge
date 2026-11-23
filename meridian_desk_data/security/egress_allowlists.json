@@ -1,0 +1,17 @@
+{
+  "allowed_domains": [
+    "meridiansupply.example"
+  ],
+  "allowed_email_recipients": [
+    "*@meridiansupply.example",
+    "customer emails already on the order's customer record"
+  ],
+  "allowed_fetch_hosts": [
+    "carrier-news.example"
+  ],
+  "blocked_patterns": [
+    "attacker.example",
+    "webhook.site",
+    "pastebin"
+  ]
+}

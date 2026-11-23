@@ -1,0 +1,12 @@
+From: Anita Rao <rao@kaveri.example>
+To: orders@meridiansupply.example
+Date: Mon, 05 Oct 2026 14:00:00 +0530
+Subject: Order MS-10422
+Message-ID: <email_11.1588829@mail.example>
+
+Hi, where is order MS-10422 right now? Planning to unload on Wednesday, need to know if the truck will make it.
+
+Regards,
+Anita Rao
+Kaveri Engineering Works, Bengaluru
++91 00000 82861

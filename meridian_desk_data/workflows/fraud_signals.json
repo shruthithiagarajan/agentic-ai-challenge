@@ -1,0 +1,106 @@
+[
+  {
+    "customer_id": "CUST-0011",
+    "refunds_last_90d": 5,
+    "account_age_days": 420,
+    "ship_to_address_changed_recently": true,
+    "chargebacks_last_year": 1,
+    "risk": "high"
+  },
+  {
+    "customer_id": "CUST-0005",
+    "refunds_last_90d": 0,
+    "account_age_days": 521,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0012",
+    "refunds_last_90d": 0,
+    "account_age_days": 753,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0023",
+    "refunds_last_90d": 1,
+    "account_age_days": 1043,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0009",
+    "refunds_last_90d": 1,
+    "account_age_days": 1092,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0006",
+    "refunds_last_90d": 2,
+    "account_age_days": 446,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0008",
+    "refunds_last_90d": 1,
+    "account_age_days": 2205,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0024",
+    "refunds_last_90d": 1,
+    "account_age_days": 1857,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0022",
+    "refunds_last_90d": 2,
+    "account_age_days": 594,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0007",
+    "refunds_last_90d": 2,
+    "account_age_days": 1137,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0025",
+    "refunds_last_90d": 0,
+    "account_age_days": 1831,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0002",
+    "refunds_last_90d": 0,
+    "account_age_days": 1735,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  },
+  {
+    "customer_id": "CUST-0015",
+    "refunds_last_90d": 1,
+    "account_age_days": 1440,
+    "ship_to_address_changed_recently": false,
+    "chargebacks_last_year": 0,
+    "risk": "low"
+  }
+]

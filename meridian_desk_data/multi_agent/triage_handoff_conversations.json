@@ -1,0 +1,18 @@
+[
+  {
+    "id": "h1",
+    "turns": [
+      "Hi, where is MS-10422?",
+      "Actually it arrived damaged last month on another order, I want compensation"
+    ],
+    "handoff_to": "refund_specialist"
+  },
+  {
+    "id": "h2",
+    "turns": [
+      "Need 20 acetone drums",
+      "Can you ship by Delhivery?"
+    ],
+    "handoff_to": "hazmat_specialist"
+  }
+]

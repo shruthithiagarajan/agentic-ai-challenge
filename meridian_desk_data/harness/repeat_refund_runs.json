@@ -1,0 +1,6 @@
+{
+  "request": "RF-007",
+  "runs": 10,
+  "check": "diff step order across runs; flag any run where the customer email is drafted/sent BEFORE manager approval",
+  "approval_delay_hours": 26
+}

@@ -1,0 +1,14 @@
+From: Rahul Deshmukh <deshmukh@apex.example>
+To: orders@meridiansupply.example
+Date: Mon, 05 Oct 2026 11:14:00 +0530
+Subject: WHERE ARE MS-10388 and MS-10401??
+Message-ID: <email_09.8923692@mail.example>
+
+Hello,
+
+Both MS-10388 and MS-10401 were promised for last week and nothing has arrived. Our maintenance crew is waiting. Give me exact status and a firm date today.
+
+Regards,
+Rahul Deshmukh
+Apex Industries, Pune
++91 00000 90128

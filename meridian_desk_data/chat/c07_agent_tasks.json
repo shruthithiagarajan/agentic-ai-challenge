@@ -1,0 +1,11 @@
+{
+  "apex_task": "For every Apex Industries order delayed more than 5 days, check whether the items are back in stock and draft an apology quoting the right policy clause.",
+  "apex_expected": "ground_truth/apex_delayed_orders.json",
+  "impossible_task": "Reconcile every order against the 2027 price list and email each customer the variance. (No 2027 price list exists.)",
+  "repeat_trap": "Keep checking stock for MS-VLV0300 until it is above zero.",
+  "budgets": {
+    "max_steps": 25,
+    "max_cost_usd": 0.5,
+    "wall_clock_s": 300
+  }
+}

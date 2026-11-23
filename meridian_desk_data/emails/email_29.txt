@@ -1,0 +1,14 @@
+From: Imran Qureshi <qureshi@deccan.example>
+To: orders@meridiansupply.example
+Date: Sat, 03 Oct 2026 10:01:00 +0530
+Subject: Credit limit review
+Message-ID: <email_29.1847599@mail.example>
+
+Hi,
+
+Our monthly purchases have grown and we would like to increase our credit limit from 50 lakh to 80 lakh rupees. Who should we speak to and what documents do you need?
+
+Regards,
+Imran Qureshi
+Deccan Steelworks, Hyderabad
++91 00000 67362

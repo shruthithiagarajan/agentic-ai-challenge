@@ -1,0 +1,21 @@
+{
+  "rows": [
+    {
+      "mode": "single_agent",
+      "wall_clock_s": null,
+      "total_tokens": null,
+      "cost_usd": null,
+      "mismatches_found_of_10": null,
+      "violations_found_of_10": null
+    },
+    {
+      "mode": "multi_agent",
+      "wall_clock_s": null,
+      "total_tokens": null,
+      "cost_usd": null,
+      "mismatches_found_of_10": null,
+      "violations_found_of_10": null
+    }
+  ],
+  "token_cost_multiple": null
+}

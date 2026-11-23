@@ -1,0 +1,14 @@
+From: Pooja Shinde <shinde@sahyadri.example>
+To: orders@meridiansupply.example
+Date: Fri, 02 Oct 2026 12:28:00 +0530
+Subject: small order
+Message-ID: <email_05.3038096@mail.example>
+
+Dear Sir,
+
+Kindly send 1 torque wrench (the 40 to 200 Nm one), 5 pairs of nitrile coated gloves size large and 2 yellow safety helmets. Need before next Friday.
+
+Regards,
+Pooja Shinde
+Sahyadri Power Tools, Kolhapur
++91 00000 35313

@@ -1,0 +1,22 @@
+{
+  "questions": [
+    "What does Desk do?",
+    "My name is Ravi",
+    "What is my name?",
+    "What is Meridian's return window for opened items?",
+    "Summarise the difference between a ball valve and a gate valve in two sentences."
+  ],
+  "long_question": "I run a fabrication unit and need advice. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. We use brass and stainless steel valves in different parts of the plant, and I want to understand the trade-offs between them for water, mild chemicals and compressed air lines. Please summarise everything above in five bullet points.",
+  "forced_failure": {
+    "modes": [
+      "simulate_429",
+      "simulate_timeout",
+      "bad_network"
+    ],
+    "expected_attempts": 3,
+    "expected_message_contains": [
+      "retries",
+      "failed"
+    ]
+  }
+}

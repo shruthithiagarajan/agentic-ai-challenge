@@ -1,0 +1,596 @@
+{
+  "labels": [
+    {
+      "email_id": "email_01",
+      "customer_id": "CUST-0003",
+      "customer_name": "Kaveri Engineering Works",
+      "intent": "order",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku": "MS-VLV0100",
+          "description": null,
+          "quantity": 40,
+          "unit": "pcs"
+        },
+        {
+          "sku": "MS-FIT0110",
+          "description": null,
+          "quantity": 25,
+          "unit": "pcs"
+        }
+      ],
+      "requested_date": "2026-10-12",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_02",
+      "customer_id": "CUST-0002",
+      "customer_name": "Bharat Pumps & Valves",
+      "intent": "order",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku_mentioned": null,
+          "description": "2-inch brass valve",
+          "quantity": 12,
+          "unit": "pcs",
+          "resolved_sku": "MS-VLV0200",
+          "ambiguous": true,
+          "candidates": [
+            "MS-VLV0200",
+            "MS-VLV0201"
+          ]
+        },
+        {
+          "sku_mentioned": null,
+          "description": "brass gate valve 2 inch",
+          "quantity": 8,
+          "unit": "pcs",
+          "resolved_sku": "MS-VLV0201",
+          "ambiguous": false
+        }
+      ],
+      "requested_date": "2026-10-31",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_03",
+      "customer_id": "CUST-0008",
+      "customer_name": "Deccan Steelworks",
+      "intent": "order",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku": "MS-FAS0105",
+          "description": null,
+          "quantity": 20,
+          "unit": "box"
+        },
+        {
+          "sku": "MS-FAS0110",
+          "description": null,
+          "quantity": 20,
+          "unit": "box"
+        }
+      ],
+      "requested_date": "2026-10-08",
+      "urgency": "high"
+    },
+    {
+      "email_id": "email_04",
+      "customer_id": "CUST-0011",
+      "customer_name": "Orion Auto Components",
+      "intent": "order",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku_mentioned": null,
+          "description": "6205 2RS sealed bearings",
+          "quantity": 300,
+          "unit": "pcs",
+          "resolved_sku": "MS-BRG0101",
+          "ambiguous": false
+        }
+      ],
+      "requested_date": "2026-10-20",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_05",
+      "customer_id": "CUST-0015",
+      "customer_name": "Sahyadri Power Tools",
+      "intent": "order",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku_mentioned": null,
+          "description": "torque wrench 40 to 200 Nm",
+          "quantity": 1,
+          "unit": "pcs",
+          "resolved_sku": "MS-TLS0110",
+          "ambiguous": false
+        },
+        {
+          "sku_mentioned": null,
+          "description": "nitrile coated gloves size large",
+          "quantity": 5,
+          "unit": "pair",
+          "resolved_sku": "MS-PPE0101",
+          "ambiguous": false
+        },
+        {
+          "sku_mentioned": null,
+          "description": "yellow safety helmets",
+          "quantity": 2,
+          "unit": "pcs",
+          "resolved_sku": "MS-PPE0120",
+          "ambiguous": false
+        }
+      ],
+      "requested_date": "2026-10-09",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_06",
+      "customer_id": "CUST-0005",
+      "customer_name": "Narmada Chemicals Ltd",
+      "intent": "order",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku": "MS-HAZ0101",
+          "description": "acetone 20 L",
+          "quantity": 10,
+          "unit": "drum"
+        },
+        {
+          "sku_mentioned": null,
+          "description": "hydrochloric acid 30%",
+          "quantity": 4,
+          "unit": "carboy",
+          "resolved_sku": "MS-HAZ0105",
+          "ambiguous": false
+        }
+      ],
+      "requested_date": "2026-10-14",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_07",
+      "customer_id": "CUST-0017",
+      "customer_name": "Cauvery Water Systems",
+      "intent": "order",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10276"
+      ],
+      "line_items": [],
+      "reorder_of": "MS-10276",
+      "reorder_lines": [
+        {
+          "sku": "MS-ELC0401",
+          "quantity": 10,
+          "unit": "pcs"
+        },
+        {
+          "sku": "MS-HAZ0111",
+          "quantity": 8,
+          "unit": "cylinder"
+        }
+      ],
+      "requested_date": "2026-10-15",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_08",
+      "customer_id": "CUST-0022",
+      "customer_name": "Pragati Hydraulics",
+      "intent": "order",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku_mentioned": null,
+          "description": "3-phase motor 7.5 kW",
+          "quantity": 2,
+          "unit": "pcs",
+          "resolved_sku": "MS-ELC0410",
+          "ambiguous": false
+        },
+        {
+          "sku_mentioned": null,
+          "description": "contactors 32A",
+          "quantity": 4,
+          "unit": "pcs",
+          "resolved_sku": "MS-ELC0420",
+          "ambiguous": false
+        }
+      ],
+      "requested_date": "2026-10-14",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_09",
+      "customer_id": "CUST-0001",
+      "customer_name": "Apex Industries",
+      "intent": "status",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10388",
+        "MS-10401"
+      ],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "high"
+    },
+    {
+      "email_id": "email_10",
+      "customer_id": "CUST-0009",
+      "customer_name": "Malabar Marine Services",
+      "intent": "status",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10439"
+      ],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_11",
+      "customer_id": "CUST-0003",
+      "customer_name": "Kaveri Engineering Works",
+      "intent": "status",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10422"
+      ],
+      "line_items": [],
+      "requested_date": "2026-10-07",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_12",
+      "customer_id": "CUST-0007",
+      "customer_name": "Godavari Agro Machinery",
+      "intent": "status",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "low"
+    },
+    {
+      "email_id": "email_13",
+      "customer_id": "CUST-0012",
+      "customer_name": "Vindhya Cement Works",
+      "intent": "status",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [
+        "MS-10417",
+        "MS-10434"
+      ],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_14",
+      "customer_id": "CUST-0013",
+      "customer_name": "Ganga Textile Mills",
+      "intent": "status",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10372"
+      ],
+      "line_items": [],
+      "requested_date": "2026-10-08",
+      "urgency": "high"
+    },
+    {
+      "email_id": "email_15",
+      "customer_id": "CUST-0014",
+      "customer_name": "Thar Mining Equipment",
+      "intent": "status",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [
+        "MS-10490"
+      ],
+      "line_items": [],
+      "requested_date": "2026-10-09",
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_16",
+      "customer_id": "CUST-0001",
+      "customer_name": "Apex Industries",
+      "intent": "complaint",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [
+        "MS-10433",
+        "MS-10401"
+      ],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "high"
+    },
+    {
+      "email_id": "email_17",
+      "customer_id": "CUST-0004",
+      "customer_name": "Sundaram Fabricators",
+      "intent": "complaint",
+      "secondary_intents": [
+        "return"
+      ],
+      "order_ids_referenced": [
+        "MS-10398"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-GSK0110",
+          "description": null,
+          "quantity": 28,
+          "unit": "pcs"
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_18",
+      "customer_id": "CUST-0008",
+      "customer_name": "Deccan Steelworks",
+      "intent": "complaint",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10457"
+      ],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_19",
+      "customer_id": "CUST-0014",
+      "customer_name": "Thar Mining Equipment",
+      "intent": "complaint",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [
+        "MS-10245"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-LUB0102",
+          "description": null,
+          "quantity": 18,
+          "unit": null
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal",
+      "note": "Planted overcharge - see ground_truth/planted_mismatches.json"
+    },
+    {
+      "email_id": "email_20",
+      "customer_id": "CUST-0016",
+      "customer_name": "Brahmaputra Tea Machinery",
+      "intent": "complaint",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_21",
+      "customer_id": "CUST-0019",
+      "customer_name": "Rann Salt Works",
+      "intent": "complaint",
+      "secondary_intents": [
+        "return"
+      ],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku_mentioned": null,
+          "description": "spiral wound gaskets DN80",
+          "quantity": null,
+          "unit": null,
+          "resolved_sku": "MS-GSK0101",
+          "ambiguous": false
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_22",
+      "customer_id": "CUST-0013",
+      "customer_name": "Ganga Textile Mills",
+      "intent": "return",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10361"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-FAS0110",
+          "description": null,
+          "quantity": 5,
+          "unit": "box"
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_23",
+      "customer_id": "CUST-0019",
+      "customer_name": "Rann Salt Works",
+      "intent": "return",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [
+        "MS-10407"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-VLV0842",
+          "description": null,
+          "quantity": 75,
+          "unit": "pcs"
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_24",
+      "customer_id": "CUST-0003",
+      "customer_name": "Kaveri Engineering Works",
+      "intent": "return",
+      "secondary_intents": [
+        "other"
+      ],
+      "order_ids_referenced": [
+        "MS-10420"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-GSK0140",
+          "description": null,
+          "quantity": 12,
+          "unit": "pcs"
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_25",
+      "customer_id": "CUST-0015",
+      "customer_name": "Sahyadri Power Tools",
+      "intent": "return",
+      "secondary_intents": [
+        "complaint"
+      ],
+      "order_ids_referenced": [
+        "MS-10443"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-TLS0104",
+          "description": null,
+          "quantity": 14,
+          "unit": "pcs"
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_26",
+      "customer_id": "CUST-0012",
+      "customer_name": "Vindhya Cement Works",
+      "intent": "return",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10099"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-PPE0122",
+          "description": null,
+          "quantity": 170,
+          "unit": "pcs"
+        }
+      ],
+      "requested_date": null,
+      "urgency": "low"
+    },
+    {
+      "email_id": "email_27",
+      "customer_id": "CUST-0013",
+      "customer_name": "Ganga Textile Mills",
+      "intent": "return",
+      "secondary_intents": [],
+      "order_ids_referenced": [
+        "MS-10454"
+      ],
+      "line_items": [
+        {
+          "sku": "MS-HAZ0105",
+          "description": null,
+          "quantity": 5,
+          "unit": "carboy"
+        }
+      ],
+      "requested_date": null,
+      "urgency": "normal"
+    },
+    {
+      "email_id": "email_28",
+      "customer_id": null,
+      "customer_name": "Triveni Enterprises",
+      "intent": "other",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "low"
+    },
+    {
+      "email_id": "email_29",
+      "customer_id": "CUST-0008",
+      "customer_name": "Deccan Steelworks",
+      "intent": "other",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [],
+      "requested_date": null,
+      "urgency": "low"
+    },
+    {
+      "email_id": "email_30",
+      "customer_id": "CUST-0020",
+      "customer_name": "Kalinga Fertilizers",
+      "intent": "other",
+      "secondary_intents": [],
+      "order_ids_referenced": [],
+      "line_items": [
+        {
+          "sku": "MS-HAZ0101",
+          "description": null,
+          "quantity": null,
+          "unit": null
+        }
+      ],
+      "requested_date": null,
+      "urgency": "low"
+    }
+  ]
+}

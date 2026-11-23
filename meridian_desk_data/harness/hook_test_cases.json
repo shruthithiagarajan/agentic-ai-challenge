@@ -1,0 +1,56 @@
+[
+  {
+    "id": "vbf-1",
+    "hook": "verify-before-finish",
+    "draft": {
+      "to": "anita.rao@kaveri.example",
+      "subject": "Apology for MS-10388",
+      "body": "Dear customer, regarding order MS-10388 ..."
+    },
+    "expect": "pass (order exists)"
+  },
+  {
+    "id": "vbf-2",
+    "hook": "verify-before-finish",
+    "draft": {
+      "to": "x@kaveri.example",
+      "subject": "Apology for MS-77777",
+      "body": "Regarding MS-77777 ..."
+    },
+    "expect": "block: order MS-77777 does not exist"
+  },
+  {
+    "id": "audit-1",
+    "hook": "audit-log",
+    "event": {
+      "tool": "get_order",
+      "args": {
+        "order_id": "MS-10422"
+      }
+    },
+    "expect": "JSONL line appended with ts, tool, args, result_size"
+  },
+  {
+    "id": "pre-1",
+    "hook": "pre-tool",
+    "event": {
+      "tool": "create_refund",
+      "args": {
+        "order_id": "MS-10403",
+        "amount": 12400
+      }
+    },
+    "expect": "blocked by permissions rule amount > 10000"
+  },
+  {
+    "id": "pre-2",
+    "hook": "pre-tool",
+    "event": {
+      "tool": "draft_email",
+      "args": {
+        "to": "audit@attacker.example"
+      }
+    },
+    "expect": "blocked by egress allow-list"
+  }
+]

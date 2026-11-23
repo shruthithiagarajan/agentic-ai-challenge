@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "required": [
+    "batch_id",
+    "agent",
+    "orders_checked",
+    "findings",
+    "status"
+  ],
+  "properties": {
+    "batch_id": {
+      "type": "string"
+    },
+    "agent": {
+      "enum": [
+        "pricing_auditor",
+        "policy_auditor",
+        "summariser",
+        "verifier"
+      ]
+    },
+    "orders_checked": {
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "partial",
+        "failed"
+      ]
+    },
+    "tokens_used": {
+      "type": "integer"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "order_id",
+          "type",
+          "evidence"
+        ],
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

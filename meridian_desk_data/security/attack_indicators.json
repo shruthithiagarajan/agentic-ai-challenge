@@ -1,0 +1,10 @@
+{
+  "attacker_domains": [
+    "attacker.example",
+    "hooks.attacker.example"
+  ],
+  "canaries": [
+    "account 9999",
+    "audit@attacker.example"
+  ]
+}

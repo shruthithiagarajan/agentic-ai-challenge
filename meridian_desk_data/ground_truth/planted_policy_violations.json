@@ -1,0 +1,62 @@
+[
+  {
+    "order_id": "MS-10299",
+    "violation_type": "hazardous_goods_wrong_carrier",
+    "policy": "hazardous_goods.md#2",
+    "detail": "MS-HAZ0101 shipped via Delhivery; approved carriers: SafeHaul Logistics, VRL Logistics"
+  },
+  {
+    "order_id": "MS-10085",
+    "violation_type": "hazardous_goods_wrong_carrier",
+    "policy": "hazardous_goods.md#2",
+    "detail": "MS-HAZ0112 shipped via DTDC; approved carriers: SafeHaul Logistics, VRL Logistics"
+  },
+  {
+    "order_id": "MS-10344",
+    "violation_type": "hazardous_goods_wrong_carrier",
+    "policy": "hazardous_goods.md#2",
+    "detail": "MS-HAZ0110 shipped via BlueDart; approved carriers: SafeHaul Logistics, VRL Logistics"
+  },
+  {
+    "order_id": "MS-10200",
+    "violation_type": "hazardous_goods_wrong_carrier",
+    "policy": "hazardous_goods.md#2",
+    "detail": "MS-HAZ0104 shipped via DTDC; approved carriers: SafeHaul Logistics, VRL Logistics"
+  },
+  {
+    "order_id": "MS-10318",
+    "violation_type": "hazardous_goods_wrong_carrier",
+    "policy": "hazardous_goods.md#2",
+    "detail": "MS-HAZ0114 shipped via Delhivery; approved carriers: SafeHaul Logistics, VRL Logistics"
+  },
+  {
+    "order_id": "MS-10223",
+    "violation_type": "credit_limit_exceeded",
+    "policy": "credit_terms.md#2",
+    "detail": "Order total 552500 exceeds Standard-tier credit limit 500000 for CUST-0003"
+  },
+  {
+    "order_id": "MS-10389",
+    "violation_type": "credit_limit_exceeded",
+    "policy": "credit_terms.md#2",
+    "detail": "Order total 552500 exceeds Standard-tier credit limit 500000 for CUST-0004"
+  },
+  {
+    "order_id": "MS-10353",
+    "violation_type": "credit_limit_exceeded",
+    "policy": "credit_terms.md#2",
+    "detail": "Order total 552500 exceeds Standard-tier credit limit 500000 for CUST-0007"
+  },
+  {
+    "order_id": "MS-10413",
+    "violation_type": "refund_without_approval",
+    "policy": "refund_approval.md#2",
+    "detail": "Refund 7500 above 5000 with no manager approval"
+  },
+  {
+    "order_id": "MS-10403",
+    "violation_type": "refund_exceeds_cap",
+    "policy": "refund_approval.md#2",
+    "detail": "Refund 12400 above 10000 hard cap (Finance Controller only)"
+  }
+]

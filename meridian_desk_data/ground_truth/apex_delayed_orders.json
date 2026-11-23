@@ -1,0 +1,262 @@
+[
+  {
+    "order_id": "MS-10388",
+    "customer_id": "CUST-0001",
+    "days_delayed": 6,
+    "promised_date": "2026-09-29",
+    "order_total": 44900.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-VLV0200",
+        "quantity": 20,
+        "stock_now": 640,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-FIT0110",
+        "quantity": 40,
+        "stock_now": 4200,
+        "fully_in_stock": true
+      }
+    ],
+    "all_lines_back_in_stock": true,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 3,
+    "expected_credit_amount": 1347.0
+  },
+  {
+    "order_id": "MS-10401",
+    "customer_id": "CUST-0001",
+    "days_delayed": 7,
+    "promised_date": "2026-09-28",
+    "order_total": 29800.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-VLV0300",
+        "quantity": 4,
+        "stock_now": 0,
+        "fully_in_stock": false
+      },
+      {
+        "sku": "MS-GSK0101",
+        "quantity": 10,
+        "stock_now": 0,
+        "fully_in_stock": false
+      }
+    ],
+    "all_lines_back_in_stock": false,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 3,
+    "expected_credit_amount": 894.0
+  },
+  {
+    "order_id": "MS-10415",
+    "customer_id": "CUST-0001",
+    "days_delayed": 9,
+    "promised_date": "2026-09-26",
+    "order_total": 51987.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-BRG0101",
+        "quantity": 60,
+        "stock_now": 1800,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-BRG0110",
+        "quantity": 30,
+        "stock_now": 5,
+        "fully_in_stock": false
+      }
+    ],
+    "all_lines_back_in_stock": false,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 3,
+    "expected_credit_amount": 1559.61
+  },
+  {
+    "order_id": "MS-10433",
+    "customer_id": "CUST-0001",
+    "days_delayed": 11,
+    "promised_date": "2026-09-24",
+    "order_total": 113700.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-VLV0420",
+        "quantity": 6,
+        "stock_now": 85,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-PIP0120",
+        "quantity": 10,
+        "stock_now": 120,
+        "fully_in_stock": true
+      }
+    ],
+    "all_lines_back_in_stock": true,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 5,
+    "expected_credit_amount": 5685.0
+  },
+  {
+    "order_id": "MS-10447",
+    "customer_id": "CUST-0001",
+    "days_delayed": 14,
+    "promised_date": "2026-09-21",
+    "order_total": 31050.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-FAS0105",
+        "quantity": 15,
+        "stock_now": 600,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-FAS0110",
+        "quantity": 15,
+        "stock_now": 700,
+        "fully_in_stock": true
+      }
+    ],
+    "all_lines_back_in_stock": true,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 5,
+    "expected_credit_amount": 1552.5
+  },
+  {
+    "order_id": "MS-10452",
+    "customer_id": "CUST-0001",
+    "days_delayed": 17,
+    "promised_date": "2026-09-18",
+    "order_total": 136200.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-ELC0410",
+        "quantity": 3,
+        "stock_now": 14,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-ELC0420",
+        "quantity": 6,
+        "stock_now": 220,
+        "fully_in_stock": true
+      }
+    ],
+    "all_lines_back_in_stock": true,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 5,
+    "expected_credit_amount": 6810.0
+  },
+  {
+    "order_id": "MS-10463",
+    "customer_id": "CUST-0001",
+    "days_delayed": 21,
+    "promised_date": "2026-09-14",
+    "order_total": 27900.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-VLV0300",
+        "quantity": 2,
+        "stock_now": 0,
+        "fully_in_stock": false
+      },
+      {
+        "sku": "MS-VLV0430",
+        "quantity": 3,
+        "stock_now": 40,
+        "fully_in_stock": true
+      }
+    ],
+    "all_lines_back_in_stock": false,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 8,
+    "expected_credit_amount": 2232.0
+  },
+  {
+    "order_id": "MS-10471",
+    "customer_id": "CUST-0001",
+    "days_delayed": 26,
+    "promised_date": "2026-09-09",
+    "order_total": 26000.0,
+    "delayed_more_than_5_days": true,
+    "lines": [
+      {
+        "sku": "MS-TLS0110",
+        "quantity": 2,
+        "stock_now": 60,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-GSK0101",
+        "quantity": 20,
+        "stock_now": 0,
+        "fully_in_stock": false
+      }
+    ],
+    "all_lines_back_in_stock": false,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 8,
+    "expected_credit_amount": 2080.0
+  },
+  {
+    "order_id": "MS-10478",
+    "customer_id": "CUST-0001",
+    "days_delayed": 3,
+    "promised_date": "2026-10-02",
+    "order_total": 28950.0,
+    "delayed_more_than_5_days": false,
+    "lines": [
+      {
+        "sku": "MS-HAZ0101",
+        "quantity": 5,
+        "stock_now": 90,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-FIT0220",
+        "quantity": 30,
+        "stock_now": 900,
+        "fully_in_stock": true
+      }
+    ],
+    "all_lines_back_in_stock": true,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 0,
+    "expected_credit_amount": 0.0
+  },
+  {
+    "order_id": "MS-10485",
+    "customer_id": "CUST-0001",
+    "days_delayed": 4,
+    "promised_date": "2026-10-01",
+    "order_total": 47000.0,
+    "delayed_more_than_5_days": false,
+    "lines": [
+      {
+        "sku": "MS-PPE0120",
+        "quantity": 100,
+        "stock_now": 800,
+        "fully_in_stock": true
+      },
+      {
+        "sku": "MS-PPE0101",
+        "quantity": 200,
+        "stock_now": 1500,
+        "fully_in_stock": true
+      }
+    ],
+    "all_lines_back_in_stock": true,
+    "policy_clause": "shipping_delays.md#3",
+    "expected_credit_percent": 0,
+    "expected_credit_amount": 0.0
+  }
+]

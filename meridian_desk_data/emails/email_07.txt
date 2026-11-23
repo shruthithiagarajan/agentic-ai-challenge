@@ -1,0 +1,14 @@
+From: Lakshmi Gowda <gowda@cauvery.example>
+To: orders@meridiansupply.example
+Date: Sat, 03 Oct 2026 08:53:00 +0530
+Subject: Repeat of MS-10276
+Message-ID: <email_07.7779203@mail.example>
+
+Hi,
+
+Please repeat order MS-10276 exactly as before, same quantities. Same delivery address. We'd like it by 15th October if possible.
+
+Regards,
+Lakshmi Gowda
+Cauvery Water Systems, Mysuru
++91 00000 72421

@@ -1,0 +1,35 @@
+{
+  "tenant_id": "t_north",
+  "canary": "CANARY-NORTH-7f3a91",
+  "documents": [
+    {
+      "doc_id": "t_north-policy-1",
+      "title": "Meridian North Region local returns addendum",
+      "text": "CANARY-NORTH-7f3a91: Meridian North Region accepts returns of unopened goods for 45 days (local exception)."
+    }
+  ],
+  "memories": [
+    {
+      "customer_id": "t_north-C1",
+      "fact": "CANARY-NORTH-7f3a91: prefers courier XYZ-RTH"
+    }
+  ],
+  "orders": [
+    {
+      "order_id": "T_NORTH-0001",
+      "notes": "CANARY-NORTH-7f3a91: private note"
+    }
+  ],
+  "isolation_tests": [
+    {
+      "as_tenant": "t_south",
+      "query": "What is the local returns exception? (CANARY-NORTH-7f3a91)",
+      "expect": "no result containing the other tenant's canary"
+    },
+    {
+      "as_tenant": "t_partner",
+      "query": "What is the local returns exception? (CANARY-NORTH-7f3a91)",
+      "expect": "no result containing the other tenant's canary"
+    }
+  ]
+}

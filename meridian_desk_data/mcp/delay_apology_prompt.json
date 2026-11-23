@@ -1,0 +1,15 @@
+{
+  "name": "delay-apology",
+  "description": "Draft an apology for a delayed order quoting the shipping-delay policy clause.",
+  "arguments": [
+    {
+      "name": "order_id",
+      "required": true
+    },
+    {
+      "name": "customer_tone",
+      "required": false
+    }
+  ],
+  "template": "Draft an apology email for order {order_id}. Look up the order and days late, find the matching row in shipping_delays.md section 3, state the credit % and quote the clause. Tone: {customer_tone}. Do not send; save as a draft."
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "fu1",
+    "turns": [
+      "Show me 2 inch brass ball valve options.",
+      "and what about the second one?",
+      "which of those is cheaper?"
+    ]
+  },
+  {
+    "id": "fu2",
+    "turns": [
+      "Which carriers do you use?",
+      "which one for chemicals?",
+      "why only those?"
+    ]
+  },
+  {
+    "id": "fu3",
+    "turns": [
+      "How do returns work?",
+      "what if I already opened it?",
+      "and the fee?"
+    ]
+  }
+]

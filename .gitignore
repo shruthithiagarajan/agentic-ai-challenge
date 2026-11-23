@@ -9,3 +9,7 @@ build/
 
 # desk chat /save files (conversation transcripts)
 .desk_sessions/
+
+# desk extract outputs (regenerated each run)
+data/results.jsonl
+data/needs_review.jsonl

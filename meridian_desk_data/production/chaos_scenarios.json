@@ -1,0 +1,27 @@
+[
+  {
+    "id": "provider_down",
+    "action": "block primary model provider endpoint for 10 minutes",
+    "expect": "gateway fails over; zero user-visible errors"
+  },
+  {
+    "id": "worker_kill",
+    "action": "kill -9 one worker during a 20-minute audit job",
+    "expect": "job resumes on another worker; no duplicate side effects"
+  },
+  {
+    "id": "rate_limit",
+    "action": "provider returns 429 for 30% of calls",
+    "expect": "retries with backoff; p95 within 2x target"
+  },
+  {
+    "id": "redis_blip",
+    "action": "restart Redis for 30s",
+    "expect": "sessions recover from Postgres"
+  },
+  {
+    "id": "mcp_instance_down",
+    "action": "stop one of two MCP server instances",
+    "expect": "load balancer routes to healthy instance"
+  }
+]

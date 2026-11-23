@@ -1,0 +1,33 @@
+{
+  "name": "Meridian Pricing Auditor",
+  "description": "Audits order lines against catalogue prices and the bulk-pricing policy and returns structured findings.",
+  "url": "http://localhost:9001/a2a",
+  "version": "1.0.0",
+  "provider": {
+    "organization": "Meridian Supply Co."
+  },
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "defaultInputModes": [
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "audit_pricing",
+      "name": "Audit pricing",
+      "description": "Given a list of order IDs, return pricing mismatches.",
+      "tags": [
+        "pricing",
+        "audit"
+      ],
+      "examples": [
+        "Audit orders MS-10001 to MS-10050"
+      ]
+    }
+  ]
+}

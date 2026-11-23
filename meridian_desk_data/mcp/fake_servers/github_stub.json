@@ -1,0 +1,202 @@
+{
+  "server": "github_stub",
+  "note": "Stub manifest only - implement as dummy MCP server returning canned text.",
+  "tools": [
+    {
+      "name": "list_issues",
+      "description": "List issues in a repo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "create_issue",
+      "description": "Create an issue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          },
+          "title": {
+            "type": "string",
+            "description": "title"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "get_issue",
+      "description": "Get an issue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          },
+          "number": {
+            "type": "string",
+            "description": "number"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "comment_issue",
+      "description": "Comment on an issue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          },
+          "number": {
+            "type": "string",
+            "description": "number"
+          },
+          "body": {
+            "type": "string",
+            "description": "body"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "list_pull_requests",
+      "description": "List PRs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "get_pull_request",
+      "description": "Get a PR.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          },
+          "number": {
+            "type": "string",
+            "description": "number"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "create_pull_request",
+      "description": "Open a PR.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          },
+          "title": {
+            "type": "string",
+            "description": "title"
+          },
+          "head": {
+            "type": "string",
+            "description": "head"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "merge_pull_request",
+      "description": "Merge a PR.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          },
+          "number": {
+            "type": "string",
+            "description": "number"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    },
+    {
+      "name": "search_code",
+      "description": "Search code.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "get_file_contents",
+      "description": "Read a file.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "repo"
+          },
+          "path": {
+            "type": "string",
+            "description": "path"
+          }
+        },
+        "required": [
+          "repo"
+        ]
+      }
+    }
+  ]
+}

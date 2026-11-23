@@ -1,0 +1,42 @@
+{
+  "servers": [
+    {
+      "name": "meridian-ops",
+      "transport": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "meridian_ops"
+      ]
+    },
+    {
+      "name": "meridian-ops-http",
+      "transport": "streamable-http",
+      "url": "http://localhost:8080/mcp",
+      "auth": "bearer"
+    },
+    {
+      "name": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "./sandbox_dir"
+      ]
+    },
+    {
+      "name": "fetch",
+      "transport": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ]
+    }
+  ],
+  "stress_test_extra": [
+    "fake_servers/carrier_tracking.json",
+    "fake_servers/slack_stub.json",
+    "fake_servers/github_stub.json"
+  ]
+}

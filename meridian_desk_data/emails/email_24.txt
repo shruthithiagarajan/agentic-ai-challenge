@@ -1,0 +1,14 @@
+From: Anita Rao <rao@kaveri.example>
+To: orders@meridiansupply.example
+Date: Sat, 03 Oct 2026 18:59:00 +0530
+Subject: Return + credit note (MS-10420)
+Message-ID: <email_24.8822626@mail.example>
+
+Dear team,
+
+Please arrange return of 12 pcs of O-Ring Assortment Kit 382 pcs from MS-10420, unopened. We would prefer a credit note against our next invoice rather than a refund to the bank. Kindly confirm the process.
+
+Regards,
+Anita Rao
+Kaveri Engineering Works, Bengaluru
++91 00000 36866

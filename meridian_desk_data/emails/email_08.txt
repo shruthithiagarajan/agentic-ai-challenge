@@ -1,0 +1,14 @@
+From: Dilip Vaghasiya <vaghasiya@pragati.example>
+To: orders@meridiansupply.example
+Date: Sun, 04 Oct 2026 17:38:00 +0530
+Subject: Quote + order motors
+Message-ID: <email_08.9908172@mail.example>
+
+Dear team,
+
+We need 2 nos of 3-phase motor 7.5 kW and 4 contactors 32A for a pump skid. Please send the quote first with delivery time. If delivery is within 10 days, treat this mail as our order.
+
+Regards,
+Dilip Vaghasiya
+Pragati Hydraulics, Rajkot
++91 00000 83124

@@ -1,0 +1,11 @@
+{
+  "get_order": "orders:read",
+  "search_orders": "orders:read",
+  "search_catalog": "catalog:read",
+  "check_stock": "catalog:read",
+  "read_policy": "policies:read",
+  "list_policies": "policies:read",
+  "draft_email": "email:draft",
+  "cancel_order": "orders:write",
+  "create_refund": "orders:write"
+}

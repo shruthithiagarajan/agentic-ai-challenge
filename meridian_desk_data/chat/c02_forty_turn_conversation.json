@@ -1,0 +1,165 @@
+{
+  "description": "38 filler turns between the fact (turn 2) and the recall question",
+  "turns": [
+    {
+      "turn": 1,
+      "user": "Hi, I'd like to ask some questions about Meridian's policies.",
+      "note": "warm-up"
+    },
+    {
+      "turn": 2,
+      "user": "For context: our plant manager Mrs. Lakshmi Iyer approves every order above 1 lakh rupees, and our PO numbers always start with KEW-77.",
+      "note": "FACT TO RECALL AT TURN 40"
+    },
+    {
+      "turn": 3,
+      "user": "How long do I have to return unopened goods?"
+    },
+    {
+      "turn": 4,
+      "user": "Is there a restocking fee for returning unopened items?"
+    },
+    {
+      "turn": 5,
+      "user": "How do I raise a return request?"
+    },
+    {
+      "turn": 6,
+      "user": "Who pays return freight if Meridian shipped the wrong item?"
+    },
+    {
+      "turn": 7,
+      "user": "How long does a refund take after the returned goods are inspected?"
+    },
+    {
+      "turn": 8,
+      "user": "What is the warranty period for bearings?"
+    },
+    {
+      "turn": 9,
+      "user": "What warranty applies to MS-ELC0410?"
+    },
+    {
+      "turn": 10,
+      "user": "What does the warranty not cover?"
+    },
+    {
+      "turn": 11,
+      "user": "How quickly must a warranty claim be raised?"
+    },
+    {
+      "turn": 12,
+      "user": "What is the standard transit time to the North-East?"
+    },
+    {
+      "turn": 13,
+      "user": "What is the freight charge on an order worth 18,000 rupees?"
+    },
+    {
+      "turn": 14,
+      "user": "When is freight free?"
+    },
+    {
+      "turn": 15,
+      "user": "Which carriers does Meridian use?"
+    },
+    {
+      "turn": 16,
+      "user": "How long are customer order records retained?"
+    },
+    {
+      "turn": 17,
+      "user": "An order arrived 8 days late. What compensation does the customer get?"
+    },
+    {
+      "turn": 18,
+      "user": "What compensation applies if delivery is 25 days late?"
+    },
+    {
+      "turn": 19,
+      "user": "How soon must Meridian tell a customer about a delay?"
+    },
+    {
+      "turn": 20,
+      "user": "Which carriers may ship hazardous goods?"
+    },
+    {
+      "turn": 21,
+      "user": "What is MS-HAZ0105?"
+    },
+    {
+      "turn": 22,
+      "user": "Can hazardous goods be returned?"
+    },
+    {
+      "turn": 23,
+      "user": "Do I need approval to order 20 drums of MS-HAZ0101?"
+    },
+    {
+      "turn": 24,
+      "user": "What discount applies to 340 units on a single order line?"
+    },
+    {
+      "turn": 25,
+      "user": "What bulk discount do I get for 60 units of one SKU?"
+    },
+    {
+      "turn": 26,
+      "user": "What is the bulk price for 120 units of MS-VLV0200?"
+    },
+    {
+      "turn": 27,
+      "user": "Can bulk discounts be combined with customer tier benefits?"
+    },
+    {
+      "turn": 28,
+      "user": "What is the credit limit for a Silver customer?"
+    },
+    {
+      "turn": 29,
+      "user": "How many days of credit do Gold customers get?"
+    },
+    {
+      "turn": 30,
+      "user": "What interest is charged on late payments?"
+    },
+    {
+      "turn": 31,
+      "user": "Who needs to approve a refund of 7,500 rupees?"
+    },
+    {
+      "turn": 32,
+      "user": "Can Desk process a refund of 12,000 rupees?"
+    },
+    {
+      "turn": 33,
+      "user": "When is a customer flagged for fraud review on refunds?"
+    },
+    {
+      "turn": 34,
+      "user": "Can I cancel an order that has already shipped?"
+    },
+    {
+      "turn": 35,
+      "user": "Can custom-cut items be cancelled?"
+    },
+    {
+      "turn": 36,
+      "user": "How many days do I have to report transit damage?"
+    },
+    {
+      "turn": 37,
+      "user": "What are the annual spend thresholds for Silver and Gold tiers?"
+    },
+    {
+      "turn": 38,
+      "user": "Which countries does Meridian export to?"
+    },
+    {
+      "turn": 39,
+      "user": "Remind me: who approves our orders above 1 lakh rupees, and what prefix do our PO numbers have?",
+      "expected_answer": "Mrs. Lakshmi Iyer; prefix KEW-77",
+      "note": "Recall test; also reused in Challenge 9"
+    }
+  ]
+}

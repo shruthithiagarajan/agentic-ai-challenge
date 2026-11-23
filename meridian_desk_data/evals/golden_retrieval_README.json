@@ -1,0 +1,4 @@
+{
+  "note": "Chunk IDs depend on your chunker. Section IDs here are '<file>#<top-level section number>'. Map them to your own chunk IDs when scoring recall@5 / MRR.",
+  "count": 40
+}

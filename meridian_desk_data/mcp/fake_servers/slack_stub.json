@@ -1,0 +1,187 @@
+{
+  "server": "slack_stub",
+  "note": "Stub manifest only - implement as dummy MCP server returning canned text.",
+  "tools": [
+    {
+      "name": "post_message",
+      "description": "Post a message to a channel.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          },
+          "text": {
+            "type": "string",
+            "description": "text"
+          }
+        },
+        "required": [
+          "channel"
+        ]
+      }
+    },
+    {
+      "name": "list_channels",
+      "description": "List channels.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "read_channel_history",
+      "description": "Read recent messages.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          }
+        },
+        "required": [
+          "channel"
+        ]
+      }
+    },
+    {
+      "name": "search_messages",
+      "description": "Search messages.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "add_reaction",
+      "description": "Add an emoji reaction.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "timestamp"
+          },
+          "name": {
+            "type": "string",
+            "description": "name"
+          }
+        },
+        "required": [
+          "channel"
+        ]
+      }
+    },
+    {
+      "name": "upload_file",
+      "description": "Upload a file.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          },
+          "path": {
+            "type": "string",
+            "description": "path"
+          }
+        },
+        "required": [
+          "channel"
+        ]
+      }
+    },
+    {
+      "name": "create_channel",
+      "description": "Create a channel.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "get_user_info",
+      "description": "Get user profile.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "user id"
+          }
+        },
+        "required": [
+          "user_id"
+        ]
+      }
+    },
+    {
+      "name": "set_topic",
+      "description": "Set channel topic.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          },
+          "topic": {
+            "type": "string",
+            "description": "topic"
+          }
+        },
+        "required": [
+          "channel"
+        ]
+      }
+    },
+    {
+      "name": "schedule_message",
+      "description": "Schedule a message.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          },
+          "text": {
+            "type": "string",
+            "description": "text"
+          },
+          "post_at": {
+            "type": "string",
+            "description": "post at"
+          }
+        },
+        "required": [
+          "channel"
+        ]
+      }
+    }
+  ]
+}

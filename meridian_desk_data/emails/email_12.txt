@@ -1,0 +1,12 @@
+From: Prakash Jadhav <jadhav@godavari.example>
+To: orders@meridiansupply.example
+Date: Fri, 02 Oct 2026 08:31:00 +0530
+Subject: my order
+Message-ID: <email_12.1661982@mail.example>
+
+Hello, I placed an order last week for some valves and fittings for our Nashik unit but I do not have the order number with me. Can you tell me when it will reach? Thanks.
+
+Regards,
+Prakash Jadhav
+Godavari Agro Machinery, Nashik
++91 00000 92660

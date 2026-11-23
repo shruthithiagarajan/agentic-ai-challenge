@@ -1,0 +1,8 @@
+{
+  "date": "2026-10-05",
+  "customer_id": "CUST-0007",
+  "prompt": "Please arrange dispatch of my next order with our usual courier.",
+  "expected_memory_used": "Prefers DTDC",
+  "expected_courier": "DTDC",
+  "caveat": "If the order contains hazardous goods the approved hazardous carriers (SafeHaul, VRL) override the preference."
+}

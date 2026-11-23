@@ -1,0 +1,14 @@
+{
+  "columns": [
+    "step",
+    "system_tokens",
+    "tool_definition_tokens",
+    "history_tokens",
+    "tool_result_tokens",
+    "cached_input_tokens",
+    "uncached_input_tokens",
+    "output_tokens",
+    "cost_usd"
+  ],
+  "rows": []
+}

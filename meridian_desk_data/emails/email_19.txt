@@ -1,0 +1,14 @@
+From: Mahendra Rathore <rathore@thar.example>
+To: orders@meridiansupply.example
+Date: Thu, 01 Oct 2026 08:53:00 +0530
+Subject: Price mismatch on MS-10245
+Message-ID: <email_19.9145692@mail.example>
+
+Hello,
+
+The invoice for MS-10245 charges MS-LUB0102 at Rs 1595.00 per unit. The price on your catalogue is Rs 1450. Please check and issue a credit note for the difference.
+
+Regards,
+Mahendra Rathore
+Thar Mining Equipment, Jodhpur
++91 00000 53448

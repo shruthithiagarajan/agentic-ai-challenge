@@ -1,0 +1,67 @@
+[
+  {
+    "email_id": "email_02",
+    "description": "2-inch brass valve",
+    "resolved_sku": "MS-VLV0200",
+    "ambiguous": true,
+    "candidates": [
+      "MS-VLV0200 (ball valve)",
+      "MS-VLV0201 (gate valve)"
+    ],
+    "note": "Customer says 'same as last time' - cannot be resolved from the email alone"
+  },
+  {
+    "email_id": "email_02",
+    "description": "brass gate valve 2 inch",
+    "resolved_sku": "MS-VLV0201",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_04",
+    "description": "6205 2RS sealed bearings",
+    "resolved_sku": "MS-BRG0101",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_05",
+    "description": "torque wrench 40 to 200 Nm",
+    "resolved_sku": "MS-TLS0110",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_05",
+    "description": "nitrile coated gloves size large",
+    "resolved_sku": "MS-PPE0101",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_05",
+    "description": "yellow safety helmets",
+    "resolved_sku": "MS-PPE0120",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_06",
+    "description": "hydrochloric acid 30%",
+    "resolved_sku": "MS-HAZ0105",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_08",
+    "description": "3-phase motor 7.5 kW",
+    "resolved_sku": "MS-ELC0410",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_08",
+    "description": "contactors 32A",
+    "resolved_sku": "MS-ELC0420",
+    "ambiguous": false
+  },
+  {
+    "email_id": "email_21",
+    "description": "spiral wound gaskets DN80",
+    "resolved_sku": "MS-GSK0101",
+    "ambiguous": false
+  }
+]

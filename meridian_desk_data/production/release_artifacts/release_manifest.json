@@ -1,0 +1,13 @@
+{
+  "current": "v2",
+  "history": [
+    "v1",
+    "v2"
+  ],
+  "candidate": "v3-bad",
+  "gate": {
+    "eval_pass_rate_min": 0.85,
+    "attack_success_rate_max": 0.0
+  },
+  "rollback": "set current back to previous entry in history; one command"
+}

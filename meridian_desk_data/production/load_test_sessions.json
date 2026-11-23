@@ -1,0 +1,533 @@
+{
+  "targets": {
+    "concurrency": 50,
+    "p95_first_token_s": 3.0,
+    "p95_task_s": 30,
+    "error_rate_max": 0.01
+  },
+  "sessions": [
+    {
+      "session_id": "load_01",
+      "user_id": "u_asha",
+      "tenant_id": "t_north",
+      "turns": [
+        "Summarise hazardous goods carrier rules",
+        "What's the return window for unopened goods?",
+        "Thanks"
+      ],
+      "think_time_s": 5.4
+    },
+    {
+      "session_id": "load_02",
+      "user_id": "u_vikram",
+      "tenant_id": "t_north",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 4.9
+    },
+    {
+      "session_id": "load_03",
+      "user_id": "u_nina",
+      "tenant_id": "t_north",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 4.8
+    },
+    {
+      "session_id": "load_04",
+      "user_id": "u_ravi",
+      "tenant_id": "t_south",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 2.2
+    },
+    {
+      "session_id": "load_05",
+      "user_id": "u_meera",
+      "tenant_id": "t_south",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 1.6
+    },
+    {
+      "session_id": "load_06",
+      "user_id": "u_sunil",
+      "tenant_id": "t_south",
+      "turns": [
+        "Summarise hazardous goods carrier rules",
+        "What's the return window for unopened goods?",
+        "Thanks"
+      ],
+      "think_time_s": 5.1
+    },
+    {
+      "session_id": "load_07",
+      "user_id": "u_pooja",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 2.1
+    },
+    {
+      "session_id": "load_08",
+      "user_id": "u_dev",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 5.0
+    },
+    {
+      "session_id": "load_09",
+      "user_id": "u_ila",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 4.6
+    },
+    {
+      "session_id": "load_10",
+      "user_id": "u_asha",
+      "tenant_id": "t_north",
+      "turns": [
+        "Summarise hazardous goods carrier rules",
+        "What's the return window for unopened goods?",
+        "Thanks"
+      ],
+      "think_time_s": 3.3
+    },
+    {
+      "session_id": "load_11",
+      "user_id": "u_vikram",
+      "tenant_id": "t_north",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 1.1
+    },
+    {
+      "session_id": "load_12",
+      "user_id": "u_nina",
+      "tenant_id": "t_north",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 3.1
+    },
+    {
+      "session_id": "load_13",
+      "user_id": "u_ravi",
+      "tenant_id": "t_south",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 5.3
+    },
+    {
+      "session_id": "load_14",
+      "user_id": "u_meera",
+      "tenant_id": "t_south",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 3.0
+    },
+    {
+      "session_id": "load_15",
+      "user_id": "u_sunil",
+      "tenant_id": "t_south",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 5.2
+    },
+    {
+      "session_id": "load_16",
+      "user_id": "u_pooja",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 3.6
+    },
+    {
+      "session_id": "load_17",
+      "user_id": "u_dev",
+      "tenant_id": "t_partner",
+      "turns": [
+        "What's the return window for unopened goods?",
+        "Summarise hazardous goods carrier rules",
+        "Thanks"
+      ],
+      "think_time_s": 5.1
+    },
+    {
+      "session_id": "load_18",
+      "user_id": "u_ila",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 4.6
+    },
+    {
+      "session_id": "load_19",
+      "user_id": "u_asha",
+      "tenant_id": "t_north",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 1.7
+    },
+    {
+      "session_id": "load_20",
+      "user_id": "u_vikram",
+      "tenant_id": "t_north",
+      "turns": [
+        "Where is order MS-10422?",
+        "Any stock of MS-VLV0200?",
+        "Thanks"
+      ],
+      "think_time_s": 4.4
+    },
+    {
+      "session_id": "load_21",
+      "user_id": "u_nina",
+      "tenant_id": "t_north",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 3.8
+    },
+    {
+      "session_id": "load_22",
+      "user_id": "u_ravi",
+      "tenant_id": "t_south",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 3.2
+    },
+    {
+      "session_id": "load_23",
+      "user_id": "u_meera",
+      "tenant_id": "t_south",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 1.2
+    },
+    {
+      "session_id": "load_24",
+      "user_id": "u_sunil",
+      "tenant_id": "t_south",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 5.0
+    },
+    {
+      "session_id": "load_25",
+      "user_id": "u_pooja",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 5.6
+    },
+    {
+      "session_id": "load_26",
+      "user_id": "u_dev",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 3.6
+    },
+    {
+      "session_id": "load_27",
+      "user_id": "u_ila",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 3.8
+    },
+    {
+      "session_id": "load_28",
+      "user_id": "u_asha",
+      "tenant_id": "t_north",
+      "turns": [
+        "Summarise hazardous goods carrier rules",
+        "What's the return window for unopened goods?",
+        "Thanks"
+      ],
+      "think_time_s": 3.3
+    },
+    {
+      "session_id": "load_29",
+      "user_id": "u_vikram",
+      "tenant_id": "t_north",
+      "turns": [
+        "Summarise hazardous goods carrier rules",
+        "What's the return window for unopened goods?",
+        "Thanks"
+      ],
+      "think_time_s": 3.3
+    },
+    {
+      "session_id": "load_30",
+      "user_id": "u_nina",
+      "tenant_id": "t_north",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 5.7
+    },
+    {
+      "session_id": "load_31",
+      "user_id": "u_ravi",
+      "tenant_id": "t_south",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 1.5
+    },
+    {
+      "session_id": "load_32",
+      "user_id": "u_meera",
+      "tenant_id": "t_south",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 3.2
+    },
+    {
+      "session_id": "load_33",
+      "user_id": "u_sunil",
+      "tenant_id": "t_south",
+      "turns": [
+        "What's the return window for unopened goods?",
+        "Summarise hazardous goods carrier rules",
+        "Thanks"
+      ],
+      "think_time_s": 3.3
+    },
+    {
+      "session_id": "load_34",
+      "user_id": "u_pooja",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 4.1
+    },
+    {
+      "session_id": "load_35",
+      "user_id": "u_dev",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Where is order MS-10422?",
+        "Any stock of MS-VLV0200?",
+        "Thanks"
+      ],
+      "think_time_s": 4.1
+    },
+    {
+      "session_id": "load_36",
+      "user_id": "u_ila",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 4.3
+    },
+    {
+      "session_id": "load_37",
+      "user_id": "u_asha",
+      "tenant_id": "t_north",
+      "turns": [
+        "Where is order MS-10422?",
+        "Any stock of MS-VLV0200?",
+        "Thanks"
+      ],
+      "think_time_s": 2.6
+    },
+    {
+      "session_id": "load_38",
+      "user_id": "u_vikram",
+      "tenant_id": "t_north",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 4.4
+    },
+    {
+      "session_id": "load_39",
+      "user_id": "u_nina",
+      "tenant_id": "t_north",
+      "turns": [
+        "Where is order MS-10422?",
+        "Any stock of MS-VLV0200?",
+        "Thanks"
+      ],
+      "think_time_s": 3.9
+    },
+    {
+      "session_id": "load_40",
+      "user_id": "u_ravi",
+      "tenant_id": "t_south",
+      "turns": [
+        "Process refund request RF-001",
+        "Thanks"
+      ],
+      "think_time_s": 1.4
+    },
+    {
+      "session_id": "load_41",
+      "user_id": "u_meera",
+      "tenant_id": "t_south",
+      "turns": [
+        "Where is order MS-10422?",
+        "Any stock of MS-VLV0200?",
+        "Thanks"
+      ],
+      "think_time_s": 3.5
+    },
+    {
+      "session_id": "load_42",
+      "user_id": "u_sunil",
+      "tenant_id": "t_south",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 3.6
+    },
+    {
+      "session_id": "load_43",
+      "user_id": "u_pooja",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 5.8
+    },
+    {
+      "session_id": "load_44",
+      "user_id": "u_dev",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 1.3
+    },
+    {
+      "session_id": "load_45",
+      "user_id": "u_ila",
+      "tenant_id": "t_partner",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 1.1
+    },
+    {
+      "session_id": "load_46",
+      "user_id": "u_asha",
+      "tenant_id": "t_north",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 4.4
+    },
+    {
+      "session_id": "load_47",
+      "user_id": "u_vikram",
+      "tenant_id": "t_north",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 5.6
+    },
+    {
+      "session_id": "load_48",
+      "user_id": "u_nina",
+      "tenant_id": "t_north",
+      "turns": [
+        "Draft an apology for MS-10388",
+        "Thanks"
+      ],
+      "think_time_s": 3.9
+    },
+    {
+      "session_id": "load_49",
+      "user_id": "u_ravi",
+      "tenant_id": "t_south",
+      "turns": [
+        "Where is order MS-10422?",
+        "Any stock of MS-VLV0200?",
+        "Thanks"
+      ],
+      "think_time_s": 3.2
+    },
+    {
+      "session_id": "load_50",
+      "user_id": "u_meera",
+      "tenant_id": "t_south",
+      "turns": [
+        "Any stock of MS-VLV0200?",
+        "Where is order MS-10422?",
+        "Thanks"
+      ],
+      "think_time_s": 4.4
+    }
+  ]
+}

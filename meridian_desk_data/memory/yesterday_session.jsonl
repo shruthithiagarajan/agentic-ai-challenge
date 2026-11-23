@@ -1,0 +1,3 @@
+{"ts": "2026-10-04T10:02:11+05:30", "role": "user", "customer_id": "CUST-0007", "content": "Hi, from now on please always ship our orders with DTDC. Delhivery keeps denting our cartons."}
+{"ts": "2026-10-04T10:02:15+05:30", "role": "assistant", "content": "Noted - I'll record DTDC as your preferred courier for non-hazardous shipments."}
+{"ts": "2026-10-04T10:05:40+05:30", "role": "user", "customer_id": "CUST-0007", "content": "Also our receiving person is Mr. Jadhav, call him before delivery."}

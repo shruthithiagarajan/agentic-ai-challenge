@@ -1,0 +1,14 @@
+From: Alok Tiwari <tiwari@vindhya.example>
+To: orders@meridiansupply.example
+Date: Fri, 02 Oct 2026 15:06:00 +0530
+Subject: Excess stock return MS-10099
+Message-ID: <email_26.3275406@mail.example>
+
+Hello,
+
+We over-ordered on MS-10099. We would like to return 170 pcs of MS-PPE0122 - unopened and still on the pallet. It was delivered around 2026-07-24. Please issue RMA.
+
+Regards,
+Alok Tiwari
+Vindhya Cement Works, Satna
++91 00000 19421

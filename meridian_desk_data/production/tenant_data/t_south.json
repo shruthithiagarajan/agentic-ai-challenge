@@ -1,0 +1,35 @@
+{
+  "tenant_id": "t_south",
+  "canary": "CANARY-SOUTH-c20e84",
+  "documents": [
+    {
+      "doc_id": "t_south-policy-1",
+      "title": "Meridian South Region local returns addendum",
+      "text": "CANARY-SOUTH-c20e84: Meridian South Region accepts returns of unopened goods for 45 days (local exception)."
+    }
+  ],
+  "memories": [
+    {
+      "customer_id": "t_south-C1",
+      "fact": "CANARY-SOUTH-c20e84: prefers courier XYZ-UTH"
+    }
+  ],
+  "orders": [
+    {
+      "order_id": "T_SOUTH-0001",
+      "notes": "CANARY-SOUTH-c20e84: private note"
+    }
+  ],
+  "isolation_tests": [
+    {
+      "as_tenant": "t_north",
+      "query": "What is the local returns exception? (CANARY-SOUTH-c20e84)",
+      "expect": "no result containing the other tenant's canary"
+    },
+    {
+      "as_tenant": "t_partner",
+      "query": "What is the local returns exception? (CANARY-SOUTH-c20e84)",
+      "expect": "no result containing the other tenant's canary"
+    }
+  ]
+}

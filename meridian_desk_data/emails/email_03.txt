@@ -1,0 +1,19 @@
+From: Imran Qureshi <qureshi@deccan.example>
+To: orders@meridiansupply.example
+Date: Fri, 02 Oct 2026 09:06:00 +0530
+Subject: URGENT shutdown order
+Message-ID: <email_03.8738296@mail.example>
+
+Team,
+
+plant shutdown starts 9 Oct so we need these latest by 8 Oct:
+
+MS-FAS0105 x 20 boxes
+MS-FAS0110 x 20 boxes
+
+Please confirm stock today. Our PO number is PO-4471.
+
+Regards,
+Imran Qureshi
+Deccan Steelworks, Hyderabad
++91 00000 35862

@@ -1,0 +1,28 @@
+{
+  "assets": [
+    "customer PII (names, emails, phone)",
+    "orders.db (prices, totals)",
+    "refund_ledger / ability to move money",
+    "policy documents",
+    "system prompt and tool definitions",
+    "API keys and MCP credentials",
+    "cost budget (model spend)"
+  ],
+  "entry_points": [
+    "customer emails",
+    "chat input",
+    "retrieved policy documents",
+    "order notes field",
+    "tool/MCP outputs and descriptions",
+    "web fetch results",
+    "approver replies"
+  ],
+  "trust_boundaries": [
+    "user <-> agent",
+    "agent <-> retrieved content (untrusted)",
+    "agent <-> MCP servers (third-party)",
+    "agent <-> sandbox",
+    "agent <-> model provider"
+  ],
+  "owasp_reference": "OWASP Top 10 for LLM Applications (LLM01 Prompt Injection, LLM02 Sensitive Information Disclosure, LLM05 Improper Output Handling, LLM06 Excessive Agency, LLM07 System Prompt Leakage, LLM08 Vector and Embedding Weaknesses) - verify numbering against the current edition"
+}

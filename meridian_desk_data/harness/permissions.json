@@ -1,0 +1,44 @@
+{
+  "modes": [
+    "read-only",
+    "ask-on-write",
+    "auto"
+  ],
+  "default_mode": "ask-on-write",
+  "tools": {
+    "get_order": "allow",
+    "search_catalog": "allow",
+    "check_stock": "allow",
+    "search_policies": "allow",
+    "calculate": "allow",
+    "draft_email": {
+      "default": "allow",
+      "rules": [
+        {
+          "when": "recipient not in egress allow-list",
+          "action": "deny"
+        }
+      ]
+    },
+    "send_email": "deny",
+    "cancel_order": "ask",
+    "delete_order": "deny",
+    "create_refund": {
+      "default": "ask",
+      "rules": [
+        {
+          "when": "amount > 10000",
+          "action": "deny"
+        },
+        {
+          "when": "amount <= 5000 and mode == 'auto'",
+          "action": "allow"
+        }
+      ]
+    },
+    "run_code": {
+      "default": "ask",
+      "sandbox": true
+    }
+  }
+}

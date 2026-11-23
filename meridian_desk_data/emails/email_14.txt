@@ -1,0 +1,14 @@
+From: Farhan Siddiqui <siddiqui@ganga.example>
+To: orders@meridiansupply.example
+Date: Mon, 05 Oct 2026 09:16:00 +0530
+Subject: need by Thursday
+Message-ID: <email_14.9455959@mail.example>
+
+Hi,
+
+Status of MS-10372 please. We need it by Thursday for the Kanpur line, otherwise the machine stays down.
+
+Regards,
+Farhan Siddiqui
+Ganga Textile Mills, Kanpur
++91 00000 13716

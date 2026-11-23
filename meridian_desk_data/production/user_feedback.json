@@ -1,0 +1,92 @@
+[
+  {
+    "id": "fb01",
+    "session_id": "load_03",
+    "rating": "up",
+    "comment": "Got the wrong return window"
+  },
+  {
+    "id": "fb02",
+    "session_id": "load_04",
+    "rating": "down",
+    "comment": "Fast and correct"
+  },
+  {
+    "id": "fb03",
+    "session_id": "load_05",
+    "rating": "down",
+    "comment": "Quoted an old policy"
+  },
+  {
+    "id": "fb04",
+    "session_id": "load_06",
+    "rating": "up",
+    "comment": "Didn't find my order"
+  },
+  {
+    "id": "fb05",
+    "session_id": "load_07",
+    "rating": "down",
+    "comment": "Great apology draft"
+  },
+  {
+    "id": "fb06",
+    "session_id": "load_08",
+    "rating": "down",
+    "comment": "Too slow"
+  },
+  {
+    "id": "fb07",
+    "session_id": "load_09",
+    "rating": "down",
+    "comment": "Perfect"
+  },
+  {
+    "id": "fb08",
+    "session_id": "load_10",
+    "rating": "down",
+    "comment": "Wrong refund route"
+  },
+  {
+    "id": "fb09",
+    "session_id": "load_11",
+    "rating": "up",
+    "comment": "Missing citation"
+  },
+  {
+    "id": "fb10",
+    "session_id": "load_12",
+    "rating": "down",
+    "comment": "Good"
+  },
+  {
+    "id": "fb11",
+    "session_id": "load_13",
+    "rating": "up",
+    "comment": "Hallucinated a SKU"
+  },
+  {
+    "id": "fb12",
+    "session_id": "load_14",
+    "rating": "down",
+    "comment": "Helpful"
+  },
+  {
+    "id": "fb13",
+    "session_id": "load_15",
+    "rating": "down",
+    "comment": "Asked me the same thing twice"
+  },
+  {
+    "id": "fb14",
+    "session_id": "load_16",
+    "rating": "up",
+    "comment": "Stopped halfway on the audit"
+  },
+  {
+    "id": "fb15",
+    "session_id": "load_17",
+    "rating": "down",
+    "comment": "Nice"
+  }
+]

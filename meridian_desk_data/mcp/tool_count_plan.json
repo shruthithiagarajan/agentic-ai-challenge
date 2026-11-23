@@ -1,0 +1,8 @@
+{
+  "meridian_ops": 9,
+  "filesystem": 11,
+  "fetch": 1,
+  "fake_stub_servers": 30,
+  "total": 51,
+  "goal": "measure tokens consumed by tool definitions before the user types anything (target ~50 tools)"
+}

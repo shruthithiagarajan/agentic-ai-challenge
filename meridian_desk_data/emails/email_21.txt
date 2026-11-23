@@ -1,0 +1,14 @@
+From: Jignesh Solanki <solanki@rann.example>
+To: orders@meridiansupply.example
+Date: Fri, 02 Oct 2026 17:00:00 +0530
+Subject: Gaskets leaking
+Message-ID: <email_21.2043513@mail.example>
+
+Dear Sir,
+
+The spiral wound gaskets DN80 that you supplied in September are leaking at the flange after only a few weeks of operation. We think there is a manufacturing defect. Do you cover this under warranty? If so we will send them back.
+
+Regards,
+Jignesh Solanki
+Rann Salt Works, Gandhidham
++91 00000 25375

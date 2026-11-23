@@ -1,0 +1,14 @@
+From: Alok Tiwari <tiwari@vindhya.example>
+To: orders@meridiansupply.example
+Date: Sat, 03 Oct 2026 13:48:00 +0530
+Subject: MS-10417 / MS-10434 status + invoice
+Message-ID: <email_13.8261276@mail.example>
+
+Dear team,
+
+Please confirm if MS-10417 and MS-10434 have both been delivered. Also please email us a copy of the invoice for MS-10434 - accounts department needs it for payment.
+
+Regards,
+Alok Tiwari
+Vindhya Cement Works, Satna
++91 00000 46692

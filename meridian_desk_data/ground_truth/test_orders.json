@@ -1,0 +1,15 @@
+{
+  "test_orders": [
+    "MS-10491",
+    "MS-10492",
+    "MS-10493",
+    "MS-10494",
+    "MS-10495",
+    "MS-10496"
+  ],
+  "decoys_real_orders_with_word_test": [
+    "MS-10312",
+    "MS-10345"
+  ],
+  "note": "Test orders belong to CUST-9001. Decoys are real customer orders whose notes mention 'test certificate'."
+}

@@ -1,0 +1,113 @@
+{
+  "tenants": [
+    {
+      "tenant_id": "t_north",
+      "name": "Meridian North Region",
+      "monthly_budget_usd": 300
+    },
+    {
+      "tenant_id": "t_south",
+      "name": "Meridian South Region",
+      "monthly_budget_usd": 250
+    },
+    {
+      "tenant_id": "t_partner",
+      "name": "Partner Distributor X",
+      "monthly_budget_usd": 100
+    }
+  ],
+  "users": [
+    {
+      "user_id": "u_asha",
+      "tenant_id": "t_north",
+      "role": "agent",
+      "permissions": [
+        "read",
+        "draft"
+      ]
+    },
+    {
+      "user_id": "u_vikram",
+      "tenant_id": "t_north",
+      "role": "manager",
+      "permissions": [
+        "read",
+        "draft",
+        "approve_refund"
+      ]
+    },
+    {
+      "user_id": "u_nina",
+      "tenant_id": "t_north",
+      "role": "admin",
+      "permissions": [
+        "read",
+        "draft",
+        "approve_refund",
+        "admin"
+      ]
+    },
+    {
+      "user_id": "u_ravi",
+      "tenant_id": "t_south",
+      "role": "agent",
+      "permissions": [
+        "read",
+        "draft"
+      ]
+    },
+    {
+      "user_id": "u_meera",
+      "tenant_id": "t_south",
+      "role": "manager",
+      "permissions": [
+        "read",
+        "draft",
+        "approve_refund"
+      ]
+    },
+    {
+      "user_id": "u_sunil",
+      "tenant_id": "t_south",
+      "role": "agent",
+      "permissions": [
+        "read"
+      ]
+    },
+    {
+      "user_id": "u_pooja",
+      "tenant_id": "t_partner",
+      "role": "agent",
+      "permissions": [
+        "read",
+        "draft"
+      ]
+    },
+    {
+      "user_id": "u_dev",
+      "tenant_id": "t_partner",
+      "role": "manager",
+      "permissions": [
+        "read",
+        "draft",
+        "approve_refund"
+      ]
+    },
+    {
+      "user_id": "u_ila",
+      "tenant_id": "t_partner",
+      "role": "agent",
+      "permissions": [
+        "read"
+      ]
+    },
+    {
+      "user_id": "u_root",
+      "tenant_id": "t_north",
+      "role": "platform_admin",
+      "permissions": [
+        "admin"
+      ]
+    }
+  ]
+}

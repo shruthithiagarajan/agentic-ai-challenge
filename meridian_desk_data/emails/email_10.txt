@@ -1,0 +1,14 @@
+From: Thomas Varghese <varghese@malabar.example>
+To: orders@meridiansupply.example
+Date: Thu, 01 Oct 2026 14:47:00 +0530
+Subject: tracking for MS-10439
+Message-ID: <email_10.3321009@mail.example>
+
+Hi,
+
+The tracking link for MS-10439 (Delhivery) shows no update since it was dispatched. Could you check whether it was delivered? Our store says nothing has come.
+
+Regards,
+Thomas Varghese
+Malabar Marine Services, Kochi
++91 00000 29067

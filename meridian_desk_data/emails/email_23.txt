@@ -1,0 +1,14 @@
+From: Jignesh Solanki <solanki@rann.example>
+To: orders@meridiansupply.example
+Date: Thu, 01 Oct 2026 08:15:00 +0530
+Subject: Return of opened item - MS-10407
+Message-ID: <email_23.2479190@mail.example>
+
+Hi,
+
+We opened the pack of Brass Ball Valve 0.5" BSP (MS-VLV0842) from MS-10407 that was delivered on 2026-09-21 and found we ordered the wrong size. It is 10 days since delivery. We would like to return 75 pcs. Is this still possible and is there any charge?
+
+Regards,
+Jignesh Solanki
+Rann Salt Works, Gandhidham
++91 00000 79988

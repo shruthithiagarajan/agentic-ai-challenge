@@ -1,0 +1,14 @@
+From: Rahul Deshmukh <deshmukh@apex.example>
+To: orders@meridiansupply.example
+Date: Mon, 05 Oct 2026 08:41:00 +0530
+Subject: Unacceptable delay - MS-10433
+Message-ID: <email_16.8910741@mail.example>
+
+To whoever manages this account,
+
+MS-10433 is now almost two weeks late. This is the third time this year. We expect compensation as per your shipping policy and a firm dispatch date. Separately, the invoice for MS-10401 shows the wrong GST number, please correct it.
+
+Regards,
+Rahul Deshmukh
+Apex Industries, Pune
++91 00000 32633

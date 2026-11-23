@@ -1,0 +1,22 @@
+{
+  "scenarios": [
+    {
+      "id": "crash",
+      "target": "pricing_auditor:B04",
+      "mode": "raise exception at step 3",
+      "expect": "orchestrator retries once, then reports partial"
+    },
+    {
+      "id": "timeout",
+      "target": "policy_auditor:B07",
+      "mode": "sleep > timeout",
+      "expect": "orchestrator marks batch partial"
+    },
+    {
+      "id": "garbage",
+      "target": "summariser",
+      "mode": "return invalid JSON",
+      "expect": "schema validation fails; retry"
+    }
+  ]
+}

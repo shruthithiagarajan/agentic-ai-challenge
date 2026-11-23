@@ -1,0 +1,19 @@
+From: Anita Rao <rao@kaveri.example>
+To: orders@meridiansupply.example
+Date: Thu, 01 Oct 2026 16:04:00 +0530
+Subject: Order request - valves and elbows
+Message-ID: <email_01.2675113@mail.example>
+
+Hi team,
+
+Please supply the following and confirm the delivery date:
+
+1. MS-VLV0100 - 40 nos
+2. MS-FIT0110 - 25 nos
+
+We need this at our Bengaluru plant by 12 Oct. Please share the proforma invoice.
+
+Regards,
+Anita Rao
+Kaveri Engineering Works, Bengaluru
++91 00000 43125

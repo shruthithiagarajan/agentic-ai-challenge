@@ -1,0 +1,36 @@
+{
+  "session_a": {
+    "name": "demo_a",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What carriers do you use?"
+      },
+      {
+        "role": "assistant",
+        "content": "BlueDart, Delhivery, DTDC, VRL Logistics and SafeHaul Logistics."
+      }
+    ],
+    "totals": {
+      "input_tokens": 40,
+      "output_tokens": 22
+    }
+  },
+  "session_b": {
+    "name": "demo_b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "My name is Ravi."
+      },
+      {
+        "role": "assistant",
+        "content": "Nice to meet you, Ravi."
+      }
+    ],
+    "totals": {
+      "input_tokens": 18,
+      "output_tokens": 9
+    }
+  }
+}

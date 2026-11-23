@@ -1,0 +1,16 @@
+{
+  "failure_mode_taxonomy": [
+    "wrong_tool",
+    "missing_tool_call",
+    "bad_arguments",
+    "hallucinated_fact",
+    "stale_policy",
+    "arithmetic_error",
+    "ignored_stop_condition",
+    "unsafe_action",
+    "premature_finish",
+    "retrieval_miss",
+    "other"
+  ],
+  "instructions": "After running the suite, read 20 failed traces, tag each with one taxonomy label, fix the most common one, re-run."
+}

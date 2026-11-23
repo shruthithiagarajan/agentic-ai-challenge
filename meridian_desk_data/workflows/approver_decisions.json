@@ -1,0 +1,45 @@
+[
+  {
+    "request_id": "RF-007",
+    "decision": "approve",
+    "approver": "mgr.iyer",
+    "responds_after_hours": 2,
+    "comment": ""
+  },
+  {
+    "request_id": "RF-008",
+    "decision": "approve",
+    "approver": "mgr.iyer",
+    "responds_after_hours": 2,
+    "comment": ""
+  },
+  {
+    "request_id": "RF-009",
+    "decision": "approve",
+    "approver": "mgr.iyer",
+    "responds_after_hours": 2,
+    "comment": ""
+  },
+  {
+    "request_id": "RF-010",
+    "decision": "approve",
+    "approver": "mgr.iyer",
+    "responds_after_hours": 20,
+    "comment": ""
+  },
+  {
+    "request_id": "RF-011",
+    "decision": "edit",
+    "edited_amount": 5304.0,
+    "approver": "mgr.sharma",
+    "responds_after_hours": 20,
+    "comment": "Only part of the consignment was damaged"
+  },
+  {
+    "request_id": "RF-012",
+    "decision": "reject",
+    "approver": "mgr.iyer",
+    "responds_after_hours": 6,
+    "comment": "Fraud review: repeated refunds"
+  }
+]

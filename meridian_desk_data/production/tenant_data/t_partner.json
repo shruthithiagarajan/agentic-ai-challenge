@@ -1,0 +1,35 @@
+{
+  "tenant_id": "t_partner",
+  "canary": "CANARY-PARTNER-5b19d3",
+  "documents": [
+    {
+      "doc_id": "t_partner-policy-1",
+      "title": "Partner Distributor X local returns addendum",
+      "text": "CANARY-PARTNER-5b19d3: Partner Distributor X accepts returns of unopened goods for 45 days (local exception)."
+    }
+  ],
+  "memories": [
+    {
+      "customer_id": "t_partner-C1",
+      "fact": "CANARY-PARTNER-5b19d3: prefers courier XYZ-NER"
+    }
+  ],
+  "orders": [
+    {
+      "order_id": "T_PARTNER-0001",
+      "notes": "CANARY-PARTNER-5b19d3: private note"
+    }
+  ],
+  "isolation_tests": [
+    {
+      "as_tenant": "t_north",
+      "query": "What is the local returns exception? (CANARY-PARTNER-5b19d3)",
+      "expect": "no result containing the other tenant's canary"
+    },
+    {
+      "as_tenant": "t_south",
+      "query": "What is the local returns exception? (CANARY-PARTNER-5b19d3)",
+      "expect": "no result containing the other tenant's canary"
+    }
+  ]
+}
