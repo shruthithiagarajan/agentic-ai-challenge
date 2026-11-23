@@ -1,4 +1,4 @@
-"""One chat-completion call against Groq's OpenAI-compatible API, with retry + exponential backoff.
+"""Calls to Groq's OpenAI-compatible API (one-shot and streaming), with retry + exponential backoff.
 
 Raw `openai` SDK only (Challenges 1-7: no agent frameworks).
 """
@@ -27,6 +27,7 @@ class Result:
     output_tokens: int
     latency_s: float
     attempts: int
+    estimated: bool = False  # True when token counts are a chars//4 guess (API sent no usage)
 
 
 SIMULATED = {"429": "rate limited (429)", "timeout": "request timed out", "network": "could not reach the Groq API (network)"}
@@ -110,3 +111,82 @@ def ask(question, system, model, temperature=None, simulate=None, timeout=30.0, 
     text = (resp.choices[0].message.content or "").strip()
     usage = resp.usage
     return Result(text, usage.prompt_tokens, usage.completion_tokens, latency, attempts)
+
+
+# ---- Challenge 2: streaming -------------------------------------------------
+
+def estimate_tokens(text):
+    """Rough token count (~4 chars per token), used when the API sends no usage."""
+    return len(text or "") // 4
+
+
+def _field(obj, name):
+    return obj.get(name) if isinstance(obj, dict) else getattr(obj, name, None)
+
+
+def chunk_text(chunk):
+    """The content piece in a streamed chunk ('' for role-only / usage-only chunks)."""
+    choices = _field(chunk, "choices") or []
+    delta = _field(choices[0], "delta") if choices else None
+    return (_field(delta, "content") if delta is not None else None) or ""
+
+
+def chunk_usage(chunk):
+    """(prompt_tokens, completion_tokens) from chunk.usage or Groq's chunk.x_groq.usage, else None."""
+    for usage in (_field(chunk, "usage"), _field(_field(chunk, "x_groq") or {}, "usage")):
+        if usage is not None:
+            p, c = _field(usage, "prompt_tokens"), _field(usage, "completion_tokens")
+            if p is not None and c is not None:
+                return p, c
+    return None
+
+
+def stream_chat(messages, model, temperature=None, simulate=None, timeout=30.0, client=None, sleep=time.sleep,
+                log=lambda m: None, on_token=lambda t: print(t, end="", flush=True)):
+    """Stream one reply for a full message list, calling on_token(piece) as text arrives.
+
+    Retries (rate limit / timeout / network) only until the first token arrives; once text has been
+    shown, a failure is final, so the user never sees a reply restart halfway.
+    """
+    if not simulate and client is None:
+        client = make_client(timeout)
+
+    def until_first_token():
+        if simulate:
+            raise SimulatedError(simulate)
+        kwargs = dict(model=model, messages=messages, stream=True, stream_options={"include_usage": True})
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        chunks = iter(client.chat.completions.create(**kwargs))
+        head = []
+        for chunk in chunks:
+            head.append(chunk)
+            if chunk_text(chunk):
+                break
+        return head, chunks
+
+    t0 = time.perf_counter()
+    (head, rest), attempts = call_with_retry(until_first_token, sleep=sleep, log=log)
+    parts, usage = [], None
+
+    def take(chunk):
+        nonlocal usage
+        piece = chunk_text(chunk)
+        if piece:
+            parts.append(piece)
+            on_token(piece)
+        usage = chunk_usage(chunk) or usage
+
+    for chunk in head:
+        take(chunk)
+    try:
+        for chunk in rest:
+            take(chunk)
+    except Exception as exc:  # noqa: BLE001 - mid-stream: never retried
+        raise LLMError(f"Reply interrupted after it started (not retried): {describe(exc)}", attempts) from exc
+    latency = time.perf_counter() - t0
+    text = "".join(parts).strip()
+    if usage:
+        return Result(text, usage[0], usage[1], latency, attempts)
+    est_in = sum(estimate_tokens(m["content"]) for m in messages)
+    return Result(text, est_in, estimate_tokens(text), latency, attempts, estimated=True)
