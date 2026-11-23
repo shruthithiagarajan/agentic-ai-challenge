@@ -108,3 +108,36 @@ bye
 * **What Was Tested:** Sent a 40-turn conversation where Turn 2 established a specific fact (`project code DELTA-99 / preferred courier BlueDart`), then asked about Turn 2 on Turn 40.
 * **What Happened:** Once conversation history exceeded `DESK_MAX_HISTORY_TOKENS` (`3000`), the sliding window automatically evicted Turn 2's messages, and Desk reported it had no record of that information on Turn 40.
 * **Root Cause / Takeaway:** A naive sliding window prevents context overflow, but causes "amnesia" for important early facts. **Parked for Challenge 9**, which fixes this via context compaction, scratchpad notes, and external long-term memory.
+
+---
+
+## Challenge 3: Structured outputs (`ch03`)
+**Provider / Model:** Groq (`openai/gpt-oss-120b`, `json_schema` mode)
+
+### 1. Build & Acceptance Verification ("Done when")
+* **100% Schema Validation & Self-Healing Repair Loop:**
+  * Processed all **30/30 emails** in `data/emails/` with zero crashes (`validated: 30/30 | needs_review: 0/30`).
+  * **3 emails (`email_16`, `email_18`, `email_24`)** failed initial validation and automatically self-repaired on Attempt 2.
+  * Batch metrics: `38,691` input tokens / `14,758` output tokens (`1,782` tokens/email), `233.0s` total latency (`7.77s`/email including 429 rate-limit backoffs).
+* **Field-Level Accuracy Report (`desk accuracy` on 15 hand-labeled emails):**
+  * `customer`: **15/15 (100.0%)**
+  * `intent`: **15/15 (100.0%)**
+  * `requested_date`: **13/15 (86.7%)**
+  * `line_items`: **12/15 (80.0%)**
+  * `urgency`: **12/15 (80.0%)**
+  * `secondary_intents`: **11/15 (73.3%)**
+  * **Overall Accuracy:** **86.7%**
+  * *Notable error modes:* In `email_16`, order IDs (`MS-10433`, `MS-10401`) were misclassified as `line_items`; in `email_02`, `"before end of October"` was kept as a string instead of normalizing to `"2026-10-31"`.
+
+### 2. "Break it" Experiment Results
+
+#### Experiment 1: Plain-English Product Descriptions vs. `catalog.csv` SKUs
+* **What Was Tested:** Checked extracted `line_items` across all 30 emails against `data/catalog.csv` (`SKUs not in catalog.csv: 0 | SKUs not written in the email: 0`).
+* **What Happened:** Because the model has zero access to `catalog.csv`, emails describing products in words (e.g., *"the 2-inch brass valve"*) were left with `sku: null` instead of resolving to real catalog SKUs.
+* **Root Cause / Takeaway:** Structured outputs guarantee valid JSON formatting, but cannot bridge the knowledge gap between plain-language descriptions and Meridian's internal catalog—motivating **Challenge 4 (RAG)**.
+
+#### Experiment 2: Policy Question Without Document Retrieval
+* **Command Run:** `desk ask "What is Meridian's return policy for opened items?"` (`latency: 1.01s`, `193 in / 147 out`)
+* **What Happened:** Thanks to the Challenge 2 system prompt guardrail, Desk refused cleanly (*"I’m sorry—I don’t have the specific details of Meridian’s return policy for opened items..."*) instead of fabricating a fake policy.
+* **Root Cause / Takeaway:** While guardrails prevent hallucinations, Desk cannot answer real business policy questions until we index and retrieve `data/policies/` via **Challenge 4 (Naive RAG)**.
+
