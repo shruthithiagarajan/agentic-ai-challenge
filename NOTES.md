@@ -202,3 +202,67 @@ bye
 * Citation format not enforced (only warned).
 * No retrieval quality measurement yet (recall@k, MRR).
 * Single-shot `ask` can't handle follow-ups like "and for 30,000?" (no chat history in RAG).
+
+---
+
+## Challenge 5: Advanced RAG, measured (`ch05`)
+**Provider / Model:** Groq (`openai/gpt-oss-120b`, also the judge) · **Retrieval:** ChromaDB dense (`all-MiniLM-L6-v2`) + `rank-bm25`, merged with Reciprocal Rank Fusion · **No frameworks**
+
+### 1. What was built
+* **Heading-aware chunking:** one chunk per `## N.` section (id `file#N`, matching the golden set's section ids), Markdown tables never split, each chunk prefixed with `[Title | N. Heading | Effective YYYY-MM-DD]` → **58 chunks** (max 690 chars) instead of 15 whole-document chunks.
+* **Hybrid search:** dense top-20 + BM25 top-20 (SKUs kept as whole tokens, `18,000` → `18000`) merged with RRF (k=60).
+* **Rerank top-20 → top-5:** a fast feature reranker (query-word coverage, section-heading match, exact SKU match) on top of the RRF score. `sentence-transformers` cross-encoders were skipped: they pull in PyTorch (~1-2 GB, slow on CPU).
+* **Query rewriting:** `desk ask "and for 30,000?" --prev "<earlier question>"` turns a follow-up into a standalone query with one LLM call (falls back to joining the questions if the call fails).
+* **Latest `effective_date` preference:** two sections from the same policy family (`POL-RET-001` vs `POL-RET-002`) with ≥0.35 word overlap count as the same rule; the newer one is pulled into the top 5 and ranked above the older, and both get a `NOTE` naming the dates. The prompt tells the model to apply the latest rule and state its effective date.
+* **`--catalog` (stretch):** adds the `catalog.csv` row of any SKU in the question as a citable chunk (`[catalog.csv#MS-ELC0410]`).
+* **`desk eval-rag`:** step-by-step ablation (Recall@5, MRR@5) + LLM-judged faithfulness on the 40 golden questions. Reference answers go only to the judge, never to the answering model.
+
+### 2. Build & Acceptance Verification ("Done when")
+* **Unit Tests (`python -m unittest -v`):** Passed — **129/129** (31 new in `tests/test_ch05.py`): heading/table chunking, RRF math, BM25 rescue of a dense miss, exact-SKU boost, query rewrite + fallback, latest-date preference, Recall@5 / MRR math, judge flow.
+* **`desk ingest` idempotency:** `stored 58 chunks (0 new, 0 stale removed)` on re-run.
+* **Live `desk ask`:**
+  * *Opened items:* "7 days under the updated terms effective 2026-03-01 [returns_opened_items.md#2] (replacing the 14-day window effective 2025-01-01 [returns.md#3])" ✅
+  * *Follow-up* `"and for 30,000?" --prev "...18,000 rupees?"` → free freight [shipping.md#3] ✅
+  * *Catalog* `"What warranty applies to MS-ELC0410?" --catalog` → 24 months ✅
+  * *Refusal* `"Who is Meridian's CEO?"` → `not in the documents` ✅
+  * Input tokens per question dropped from ~1,200-1,600 (Ch4) to ~750-950.
+
+### 3. Ablation (`desk eval-rag --catalog`, 40 golden questions, k=5)
+| Step | Recall@5 | MRR@5 | Follow-ups | Newer-first | Ctx tokens |
+|---|---|---|---|---|---|
+| Ch4 baseline: fixed 2000-char chunks, dense | 0.975 | 0.933 | 1/2 | 2/2 | 1320 |
+| + heading-aware chunks with headers | 0.938 | 0.822 | 1/2 | 1/2 | 354 |
+| + BM25 hybrid (RRF) | 0.975 | 0.872 | 1/2 | 2/2 | 376 |
+| + rerank top-20 → 5 | 0.975 | 0.905 | 1/2 | 2/2 | 381 |
+| + query rewrite for follow-ups | **1.000** | **0.950** | 2/2 | 2/2 | 381 |
+| + latest effective_date preference | **1.000** | **0.950** | 2/2 | 2/2 | 383 |
+
+**Faithfulness (LLM judge, 40 full-pipeline answers):** faithful to context **38/40 (95.0%)**, agrees with reference **39/40 (97.5%)**, refusals 0, errors 0 · 82 LLM calls, 64,300 in / 14,677 out tokens (120 rate-limit retries absorbed by backoff).
+
+**Reading the table:** the Ch4 baseline looks strong only because each 2,000-char chunk is a whole policy, so it "contains" every section — at 3.5× the context. Small section chunks alone lose recall (0.938) and ranking (0.822); BM25 wins back exact terms (tables, SKUs, amounts), the rerank fixes ordering, and rewriting fixes the two vague follow-ups. The recency step doesn't move these metrics (the newer section was already first after the rerank) — its value is the dated `NOTE` that makes the model state which rule applies.
+
+### 4. "Break it" Experiment Results
+
+#### Experiment 1: Recency rule over-applied (g001)
+* **Question:** "How long do I have to return unopened goods?"
+* **What Happened:** Correct (30 days) but judged **unfaithful**: the model said the 2026 terms "replace the 30-day rule" from 2025 — both documents say the same thing, so nothing was replaced.
+* **Root Cause / Takeaway:** The prompt's "apply the latest rule and say what it replaces" fires even when the two documents agree. Fix: only add the replaced-rule wording when the `NOTE` lines are present, or tell the model to mention replacement only when the values differ.
+
+#### Experiment 2: Query rewrite drift (g040)
+* **Question:** "what about for bulk?" after "What is the return window for unopened goods?"
+* **What Happened:** Rewritten to *"bulk return window policy for unopened goods"*. Retrieval was perfect (Recall 1.0), but the answer added a 30-day window for bulk returns that the documents don't state → **unfaithful and incorrect**.
+* **Root Cause / Takeaway:** The rewrite blended the old topic (30-day window) into the new question, and the model connected two facts that the policy never connects. Rewrites need to carry the *topic*, not the previous answer's facts.
+
+#### Experiment 3: Rewrite output duplicated (g039)
+* **What Happened:** The rewrite came back as the same query twice with no line break (`...30000 rupeesMeridian Supply Co freight charge...`). Retrieval still worked because both halves are the same query.
+* **Root Cause / Takeaway:** LLM output used as an internal input still needs validation (length cap / de-duplication), not just "take the first line".
+
+#### Experiment 4: Whole-document chunks hide their cost
+* **What Happened:** The fixed-size baseline scores Recall@5 0.975 / MRR 0.933 — close to the final pipeline — while sending **1,320** context tokens per question vs **383**.
+* **Root Cause / Takeaway:** Recall alone rewards stuffing more text into each chunk. Measure context size (and faithfulness) next to recall, or the "best" retriever is just the one that sends everything.
+
+### 5. What fell short (→ next challenges)
+* Recency wording leaks into answers where documents agree (g001).
+* Follow-up rewriting needs output validation and must not carry over previous answers' facts (g039, g040).
+* `desk ask` follow-ups need `--prev` by hand; the RAG pipeline is not wired into `desk chat` history yet.
+* The judge is the same model that answers — a different judge model would make the faithfulness score more independent.

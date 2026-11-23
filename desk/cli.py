@@ -46,38 +46,57 @@ def temperature(value):
 
 
 def default_retrieve(question):
+    """Challenge 5 pipeline over the .chroma index: BM25 + dense hybrid, rerank, latest-effective-date preference."""
     from . import rag
 
-    return rag.retrieve(rag.open_collection(), question)
+    corpus = rag.Corpus(rag.open_collection())
+    if corpus.is_stale():
+        print("warning: the index was built by an older `desk ingest` - run `desk ingest` again", file=sys.stderr)
+    return rag.search(corpus, question)
 
 
 def cmd_ask(args, sleep=None, client=None, retrieve=None):
-    """Challenge 4: answer only from the top-4 policy chunks, with [file.md#N] citations."""
+    """Answer only from retrieved policy chunks, with [file.md#N] citations."""
     from . import rag
 
     if not args.question.strip():
         print("error: question is empty - try: desk ask \"your question\"", file=sys.stderr)
         return 2
+    model = pick_model(args)
+    extra = {"sleep": sleep} if sleep else {}
+    log = lambda m: print(f"[retry] {m}", file=sys.stderr)  # noqa: E731
+    debug = getattr(args, "debug", False)
+    question = args.question
+    prev = getattr(args, "prev", None) or []
+    if prev and not args.simulate:  # follow-up: make it standalone before searching
+        history = [{"role": "user", "content": p} for p in prev]
+        question = rag.rewrite_query(args.question, history, lambda system, user: ask(
+            user, system, model, temperature=0, client=client, log=log, **extra).text)
+        if debug:
+            print(f"[debug] follow-up rewritten to: {question}", file=sys.stderr)
     try:
         t0 = time.perf_counter()
-        hits = (retrieve or default_retrieve)(args.question)
+        hits = (retrieve or default_retrieve)(question)
         retrieval_s = time.perf_counter() - t0
-    except ImportError:
-        print("error: chromadb is not installed - run: pip install -e .", file=sys.stderr)
+    except ImportError as e:
+        print(f"error: {e.name or 'chromadb / rank-bm25'} is not installed - run: pip install -e .", file=sys.stderr)
         return 1
     if not hits:
         print("error: no policy documents are indexed - run `desk ingest` first", file=sys.stderr)
         return 1
-    if getattr(args, "debug", False):
-        print(f"[debug] top {len(hits)} chunks ({retrieval_s:.2f}s), cosine distance (lower = closer):", file=sys.stderr)
+    if getattr(args, "catalog", False):
+        catalog = data_dir() / "catalog.csv"
+        if catalog.is_file():
+            hits = hits + rag.catalog_hits(f"{args.question} {question}", catalog)
+        else:
+            print(f"warning: {catalog} not found - --catalog ignored", file=sys.stderr)
+    if debug:
+        print(f"[debug] top {len(hits)} chunks ({retrieval_s:.2f}s):", file=sys.stderr)
         for h in hits:
-            print(f"[debug]   [{h.id}] distance {h.distance:.3f} (similarity {1 - h.distance:.3f}) | {rag.snippet(h.text)}",
-                  file=sys.stderr)
-    model = pick_model(args)
-    extra = {"sleep": sleep} if sleep else {}
+            print(f"[debug]   {rag.debug_line(h)}", file=sys.stderr)
     try:
-        r = ask(rag.build_context(args.question, hits), RAG_SYSTEM_PROMPT, model, temperature=args.temperature,
-                simulate=args.simulate, client=client, log=lambda m: print(f"[retry] {m}", file=sys.stderr), **extra)
+        r = ask(rag.build_context(question, hits), RAG_SYSTEM_PROMPT, model, temperature=args.temperature,
+                simulate=args.simulate, client=client, log=log, **extra)
     except LLMError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
@@ -158,7 +177,7 @@ def cmd_ingest(args, collection=None):
     src = data_dir() / "policies"
     try:
         collection = collection or rag.open_collection()
-        s = rag.ingest(collection, src)
+        s = rag.ingest(collection, src, loader=rag.load_sections)
     except ImportError:
         print("error: chromadb is not installed - run: pip install -e .", file=sys.stderr)
         return 1
@@ -171,12 +190,60 @@ def cmd_ingest(args, collection=None):
     return 0
 
 
+def cmd_eval_rag(args, client=None, sleep=None, corpora=None):
+    """Challenge 5: retrieval ablation (Recall@5, MRR) + LLM-judged faithfulness on the golden questions."""
+    from . import rag, rag_eval
+    from .llm import make_client
+
+    root = data_dir()
+    golden_path, policies = root / "evals" / "golden_retrieval.jsonl", root / "policies"
+    for path in (golden_path, policies):
+        if not path.exists():
+            print(f"error: {path} not found (set DESK_DATA_DIR)", file=sys.stderr)
+            return 1
+    golden = rag_eval.load_golden(golden_path, args.limit)
+    log = lambda m: print(m, file=sys.stderr)  # noqa: E731
+    if client is None:
+        try:
+            client = make_client(timeout=60.0)
+        except LLMError as e:
+            if not args.no_faithfulness:
+                print(f"error: {e}", file=sys.stderr)
+                return 1
+            log(f"note: {e} - follow-up rewriting falls back to joining the previous question")
+    llm = rag_eval.GroqLLM(client, pick_model(args), log=log, **({"sleep": sleep} if sleep else {}))
+    try:
+        corpora = corpora or rag_eval.build_corpora(policies)
+    except ImportError as e:
+        print(f"error: {e.name or 'chromadb / rank-bm25'} is not installed - run: pip install -e .", file=sys.stderr)
+        return 1
+    log(f"retrieval ablation over {len(golden)} questions ...")
+    rows, rewrites = rag_eval.run_ablation(corpora, golden, rag_eval.fixed_section_map(policies),
+                                           rag_eval.effective_dates(policies),
+                                           lambda q, history: rag.rewrite_query(q, history, llm))
+    print(rag_eval.format_ablation(rows, len(golden)))
+    for qid, query in rewrites.items():
+        print(f"rewritten {qid}: {query}")
+    if args.no_faithfulness:
+        return 0
+    catalog = root / "catalog.csv" if args.catalog and (root / "catalog.csv").is_file() else None
+    log(f"answering + judging {len(golden)} questions with {llm.model} (slow on the free tier) ...")
+    results = rag_eval.run_faithfulness(corpora["sections"], golden, rewrites, llm, catalog, log=log)
+    print()
+    print(rag_eval.format_faithfulness(results, llm))
+    return 0
+
+
 def build_parser():
     p = argparse.ArgumentParser(prog="desk", description="Desk - Meridian Supply Co. customer-operations assistant")
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("ask", help="answer a question from the policy documents, with citations")
     a.add_argument("question")
     a.add_argument("--debug", action="store_true", help="print the retrieved chunk ids, scores and snippets")
+    a.add_argument("--prev", action="append", metavar="EARLIER_QUESTION",
+                   help="an earlier question in this conversation; a follow-up like 'and for 30,000?' is rewritten "
+                        "into a standalone query before searching (repeatable)")
+    a.add_argument("--catalog", action="store_true", help="also give the model the catalog.csv rows of any SKU named")
     c = sub.add_parser("chat", help="multi-turn streaming chat (/reset /save /load /exit)")
     c.add_argument("--pin-first", action="store_true", help="never drop the first user message from history")
     for s in (a, c):
@@ -185,7 +252,12 @@ def build_parser():
         s.add_argument("--simulate", choices=["429", "timeout", "network"], help="force a failure to test retry logic without calling the API")
     e = sub.add_parser("extract", help="extract an OrderRequest from every email into data/results.jsonl")
     e.add_argument("--model", help=f"overrides DESK_MODEL (default {DEFAULT_MODEL})")
-    sub.add_parser("ingest", help="chunk the policy docs into the local Chroma index (safe to re-run)")
+    sub.add_parser("ingest", help="chunk the policy docs by heading into the local Chroma index (safe to re-run)")
+    ev = sub.add_parser("eval-rag", help="Recall@5 / MRR ablation + LLM-judged faithfulness on the golden questions")
+    ev.add_argument("--model", help=f"answer + judge model; overrides DESK_MODEL (default {DEFAULT_MODEL})")
+    ev.add_argument("--limit", type=int, help="only the first N golden questions (quick runs)")
+    ev.add_argument("--no-faithfulness", action="store_true", help="retrieval metrics only (no answer/judge calls)")
+    ev.add_argument("--catalog", action="store_true", help="give the model catalog.csv rows for SKUs, as desk ask --catalog")
     sub.add_parser("accuracy", help="field-level accuracy of data/results.jsonl against the 15 hand labels")
     return p
 
@@ -196,7 +268,7 @@ def main(argv=None):
     load_dotenv()
     utf8_output()
     args = build_parser().parse_args(argv)
-    sys.exit({"ask": cmd_ask, "chat": cmd_chat, "ingest": cmd_ingest, "extract": cmd_extract,
+    sys.exit({"ask": cmd_ask, "chat": cmd_chat, "ingest": cmd_ingest, "eval-rag": cmd_eval_rag, "extract": cmd_extract,
               "accuracy": cmd_accuracy}[args.cmd](args))
 
 
