@@ -14,3 +14,5 @@ build/
 data/results.jsonl
 data/needs_review.jsonl
 .chroma/
+
+data/tool_calls.jsonl

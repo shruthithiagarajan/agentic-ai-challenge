@@ -270,3 +270,149 @@ bye
 * **Command Run:** `desk ask "Cancel that order."` (and with `--prev "Where is order MS-10422 right now?"`)
 * **What Happened:** Both replied `"not in the documents"`. With `--prev`, the follow-up was rewritten to *"Meridian Supply Co. cancellation policy for order MS-10422"* and the cancellation policy was retrieved, but Desk still cannot modify `orders.db` or trigger any operational workflow—RAG is strictly read-only. (It never falsely claimed to have cancelled anything.)
 * **Root Cause / Takeaway:** Giving the assistant hands to query live databases, run exact calculations, and execute actions motivates **Challenge 6 (Tool calling)**.
+
+---
+
+## Challenge 6: Tool calling (`ch06`)
+**Provider / Model:** Azure AI Foundry `gpt-6.2-sol` (`DESK_MODEL_TOOLS`), tool requests sent through `/v1/responses` · also verified on `claude-sonnet-5-5` (Anthropic SDK, `AnthropicFoundry`) · **Data:** `orders.db` (SQLite, opened read-only), `catalog.csv`, the Ch5 policy index (`.chroma/`)
+
+### 1. Why We Built This: Ch4 vs. Ch5 vs. Ch6
+
+| | Challenge 4: Naive RAG | Challenge 5: Advanced RAG | Challenge 6: Tool calling |
+| :--- | :--- | :--- | :--- |
+| **Command** | `desk ask` | `desk ask` / `desk eval-rag` | `desk tools` / `desk eval-tools` |
+| **Model** | Groq `gpt-oss-120b` | Groq `gpt-oss-120b` (Azure: Claude answers, GPT rewrites and judges) | Azure `gpt-6.2-sol` |
+| **What it can read** | 14 policy docs, 15 fixed 2,000-char chunks | Same 14 docs, 58 heading-aware chunks with `[Title \| Section \| Effective]` headers | Policies (Ch5 retriever as `search_policies`) **plus** live `orders.db` and `catalog.csv` |
+| **How it finds things** | Dense vector top-4 | BM25 + dense (RRF) → rerank 20→5 → latest-date preference → query rewrite | The **model chooses** which tool(s) to call and with what arguments |
+| **Who does the work** | The model answers from pasted chunks | Same, with better chunks | **Our code** runs the lookup or the maths; the model writes the final answer from the results |
+| **Arithmetic** | Model guesses | Model guesses (correct once, but cited policy docs for computed numbers) | `calculate` tool: exact, safe evaluator (no `eval`) |
+| **Order status** | `not in the documents` | `not in the documents` | Read from `orders.db` (status, carrier, tracking, days late) |
+| **Main weakness** | Missed contradiction, citation drift | Rewrite drift on vague follow-ups | Can't chain dependent steps (one round only) |
+| **Writes data?** | No | No | **No**: every tool is read-only (writes come in later challenges) |
+| **Cost per question** | ~1,200–1,600 input tokens | ~1,400 input tokens | ~2,800–3,100 input tokens over 2 LLM calls (the 5 tool definitions + prompt cost ~1,380 tokens on every call) |
+
+**The same question, Ch5 vs. Ch6:** `"Is MS-VLV0200 in stock and what does it cost?"`
+* **Ch5 `desk ask`:** *"Stock status for MS-VLV0200 is not in the documents"*; price ₹1,875 and an unrequested 6% tier price (₹1,762.50), both lifted from the 120-unit worked example in `[bulk_pricing.md#4]`. The price was right only because the policy happened to use this SKU as its example.
+* **Ch6 `desk tools`:** called `check_stock` **and** `search_catalog` in the same turn: *"640 pieces in stock (check_stock). The list price is ₹1,875 per piece (search_catalog)."*
+
+**The Ch5 Break it prompts, answered by Ch6:**
+
+| Ch5 Break it prompt | Ch5 result | Ch6 result |
+| :--- | :--- | :--- |
+| Where is order MS-10422 right now? | `not in the documents` | `get_order` → shipped with Delhivery on Oct 2, promised Oct 6, tracking DL566614170 ✅ |
+| 12% bulk discount on 340 units at ₹1,875 | Right numbers, but the model's own maths cited as policy | `calculate("340 * 1875 * 0.12")` = 76,500 and `calculate("340 * 1875 * (1 - 0.12)")` = 561,000 ✅ |
+| Cancel that order. | `not in the documents` (read-only) | Still read-only by design: the prompt says Desk cannot cancel, change or refund (actions come later) |
+
+---
+
+### 2. What Was Built
+
+| Tool | Reads | Arguments (JSON schema) | Error codes returned to the model |
+| :--- | :--- | :--- | :--- |
+| `get_order(order_id)` | `orders.db` (`mode=ro`, parameterised SQL) | `order_id` must match `^MS-\d{5}$` | `order_not_found`, `database_unavailable` |
+| `search_catalog(query, filters)` | `catalog.csv` | `query` 1–200 chars; optional `filters`: `category` (enum of 11), `max_unit_price` ≥ 0, `min_stock` ≥ 0 | (empty result + message) |
+| `check_stock(sku)` | `catalog.csv` | `sku` must match `^MS-[A-Z]{3}\d{4}$` | `sku_not_found` |
+| `calculate(expression)` | AST walk: numbers, `+ - * / // % **`, `round/min/max/abs` | ≤ 200 chars | `invalid_expression`, `unsupported_expression`, `division_by_zero`, `number_too_large` |
+| `search_policies(query)` | Ch5 hybrid retriever (top 5, citable ids like `shipping_delays.md#1`) | `query` 1–300 chars | `index_empty`, `index_unavailable` |
+
+* **Round trip (`desk/tooluse.py`):** question + tool list → model asks for one or more tools → every call is validated and run (`Toolbox.run` never raises) → one `tool` message per call → final answer. If the model asks for a **second** round, Desk records it, does not run it, and tells the model to answer with what it has.
+* **Failures are data:** unknown tool, invalid JSON, schema violations, not-found records and crashes all come back as `{"ok": false, "error": {"code", "message"}}`.
+* **Tool descriptions** are written like docs for a new teammate: what the tool returns, when to use it, id formats, and what it cannot do (e.g. "product SKUs such as MS-VLV0200 are NOT order ids").
+* **Logging:** every call is appended to `data/tool_calls.jsonl` (gitignored): timestamp, model, question, tool, raw arguments, ok/error code, milliseconds, result size.
+* **Azure note:** `gpt-6.2-sol` rejects function tools on `/v1/chat/completions` while reasoning is on (`400 ... use /v1/responses or set reasoning_effort to 'none'`), and `reasoning_effort='none'` is not allowed for this model. `AzureGPT` therefore sends tool requests through the Responses API (stateless, `store=False`) and hands the returned items, including encrypted reasoning, back on the next call.
+* **Claude note:** with `tool_choice: none` straight after tool results, Claude ended its turn with **no text**. Fixed by adding a short "no more tools, answer now" user message before the forced final call.
+
+---
+
+### 3. Build & Acceptance Verification ("Done when")
+* **Unit Tests (`python -m unittest -v`):** Passed: **185/185** (41 new in `tests/test_ch06.py`), offline with a temp `orders.db`, a 5-row catalog and fake OpenAI / Anthropic / Responses clients. They cover:
+  * schemas and the validator;
+  * every tool and every error code;
+  * a read-only DB and SQL injection;
+  * calculator attacks;
+  * two tools at once;
+  * second round not run;
+  * the per-reply call cap;
+  * retry on 429;
+  * the JSONL log;
+  * both SDK adapters;
+  * the CLI and `eval-tools` scoring.
+* **Order status comes from the database:**
+  * **Command Run:** `desk tools "Where is order MS-10422 right now?"`
+  * **Tool:** `get_order({"order_id":"MS-10422"}) -> ok (2 ms)`
+  * **Answer:** shipped with Delhivery on October 2, not yet delivered, promised October 6, 2026. The answer says the record has no live location and gives tracking **DL566614170**.
+  * **Usage:** 2 LLM calls, 3,113 in / 102 out, 4.14s ✅
+* **Discount maths went through the calculator:**
+  * **Command Run:** `desk tools "What is a 12% bulk discount on 340 units at 1,875 rupees each?"`
+  * **Tools:** `calculate("340 * 1875 * 0.12")` and `calculate("340 * 1875 * (1 - 0.12)")`
+  * **Answer:** *saves **₹76,500**; total **₹5,61,000** after the discount* (matches the hand check from Ch5)
+  * **Usage:** 2,943 in / 111 out ✅
+* **Unknown order ID gives a graceful answer:**
+  * **Command Run:** `desk tools "Status of MS-99999"`
+  * **Tool:** `get_order -> error order_not_found (1 ms)`
+  * **Answer:** *"Order MS-99999 wasn't found in Meridian's order database (get_order). Please double-check the order ID..."* No invented data ✅
+
+#### Edge cases (live)
+| Command | Tools run | Result | Verdict |
+| :--- | :--- | :--- | :--- |
+| `desk tools "Is MS-VLV0200 in stock and what does it cost?"` | `check_stock` + `search_catalog` (same turn) | 640 pcs in stock, ₹1,875 list price | ✅ two tools at once |
+| `desk tools "What's the weather in Pune?"` | none (1 LLM call, 1,382 in) | "I can only help with Meridian's orders, products, and policies." | ✅ out of scope |
+| `desk tools "Get order with id ''; DROP TABLE orders;--"` | none | Asked for an id in the `MS-10422` format | ✅ refused before any tool (the schema pattern and read-only DB are the backstop) |
+| `desk tools "calculate(__import__('os').system('ls'))" --debug` | none | "I can't run shell commands." | ✅ refused by the model; the safe evaluator rejects it as `unsupported_expression` (unit test) |
+| `desk tools "Where is order MS-10422?" --fail-tool get_order` | `get_order -> error tool_failed` | "The live order lookup is unavailable right now..." | ✅ crash returned as a structured error, no stack trace |
+| `desk tools "   "` | none | `error: question is empty` (exit 2) | ✅ |
+| `desk tools "hi" --simulate 429` | none | retries 1s → 2s → `Request failed after 3 attempts` | ✅ Ch1 retry still works |
+| `desk tools "Where is order MS-10388?" --model claude-sonnet-5-5 --debug` | `get_order` | Full order summary, 6 days late, quotes the "need on time" note, suggests escalating, offers to check stock | ✅ Claude path works (5,675 in / 344 out) |
+
+**Log sample (`Get-Content data\tool_calls.jsonl -Tail 5`):** one line per call, e.g. `{"tool": "check_stock", "arguments": "{\"sku\":\"MS-VLV0201\"}", "ok": true, "error": null, "ms": 0.1, "result_chars": 128}`. Tool latency is 0.1–3 ms for SQLite/CSV and 150–190 ms for `search_policies` (warm index). The first policy search in a process is ~1.5–3 s while the BM25 index loads.
+
+---
+
+### 4. Stretch: Vague Tool Description vs. Tool Selection
+`desk eval-tools` runs the 15 prompts in `chat/tool_test_prompts.json`. "chose" = the round that ran + any second round the model asked for (not run). `--vague` changes only `check_stock` to *"Gets product data."* (parameter: *"an id"*).
+
+| Run | Passed | Expected tools chosen | Extra tool calls | LLM calls | Tokens (in / out) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Normal descriptions | **11/15 (73%)** | 18/22 | 5 | 31 | 50,143 / 2,002 |
+| Vague `check_stock` | **10/15 (67%)** | 17/22 | 6 | 31 | 46,890 / 2,179 |
+
+* **What degraded:** prompt 7 *"Is MS-VLV0200 in stock and what does it cost?"* went from `[check_stock, search_catalog]` (PASS) to `[search_catalog]` only (FAIL). With no useful description, the model skipped the stock tool and relied on the `stock` column inside the catalog result. Prompt 3 also gained a redundant second `search_catalog`.
+* **What did not degrade:** *"Any MS-VLV0300 left?"* still chose `check_stock`. It was the only tool taking a `sku`, so the parameter name carried the meaning. A strong model partly recovers from a bad description. The cost shows up on prompts where two tools overlap.
+* **The 4 failures common to both runs:**
+  * **#8 and #9: the one-round limit.** Each needed `calculate` *after* seeing the stock or price results, so the maths would have been a third round. #9 instead called `search_catalog` twice to compare prices.
+  * **#10 and #11: refused without calling any tool.** On the SQL-injection and `__import__` prompts the model declined outright. That is safe behaviour, but the dataset expected the tool to be called and to return the validation error. The validator and safe evaluator are covered by unit tests instead.
+* **Takeaway:** descriptions are part of the program. A one-line description cost one prompt (73% → 67%) here, and more where tools overlap. Overlapping tools (`check_stock` vs `search_catalog`, which both expose stock) need descriptions that say when to use which.
+
+---
+
+### 5. "Break it" Experiment Results (Setting Up Challenge 7: The Agent Loop)
+
+#### Experiment 1: The Apex Industries Multi-Step Task
+* **Command Run:** `desk tools "For every Apex Industries order delayed more than 5 days, check whether the items are back in stock and draft an apology quoting the right policy clause."`
+* **What Happened:** One tool call only: `search_policies("shipping delay more than 5 days apology ...")`, which found the right clause. Desk then **asked the user for the Apex order IDs**: *"I can look up orders by ID, but I can't search the live order database by customer name, so I haven't verified any delays or stock yet."* It did quote the remedy correctly from `[shipping_delays.md#1][shipping_delays.md#3]`: written apology + 3% credit for 6–10 days late, 5% + expedited freight for 11–20 days, 8% + free cancellation for > 20 days.
+* **Root Cause / Takeaway:** The task is a chain where each step needs the previous result: find the customer → list their orders → keep those > 5 days late → `check_stock` every line → pick the clause by days late → draft. We have no "orders by customer" tool, and even with one, a single round can't feed step 2's output into step 3. The honest refusal is the best possible answer for a one-round design.
+
+#### Experiment 2: One Round Is Not Enough
+* **Command Run:** `desk tools "Where is order MS-10388 and is everything in it in stock?"`
+* **What Happened:** Round 1 ran `get_order` (delayed, 6 days late, lines MS-VLV0200 × 20 and MS-FIT0110 × 40). The model then asked for `check_stock(MS-VLV0200)` and `check_stock(MS-FIT0110)`. Desk printed `[tools] the model asked for a second round - NOT run` and the answer said **"I couldn't verify current stock for either item"** (3 LLM calls, 4,876 in / 215 out). Claude, asked only "Where is order MS-10388?", stopped after `get_order` and *offered* to check stock instead of asking.
+* **Root Cause / Takeaway:** The SKUs to check only exist *after* `get_order` returns, so the stock check can't run in the same round. The model knew exactly what to do next; our code simply has no loop.
+
+#### Experiment 3: Noticing the Urge to Hard-Code
+* **What Happened:** The obvious "fix" is a Python function `apex_delay_apologies()`:
+  1. `SELECT` the orders for the customer;
+  2. filter on `days_late > 5`;
+  3. loop `check_stock`;
+  4. look up `shipping_delays.md#3`;
+  5. fill in an apology template.
+
+  That works for this one sentence and breaks for the next variation (another customer, "more than 10 days", "refund instead of apology").
+* **Root Cause / Takeaway:** Hard-coding the sequence turns the assistant back into a script. The fix is the **agent loop (Challenge 7)**: keep calling the model, run whatever tools it asks for, feed the results back, and stop when it answers. Add step and budget limits, and a list-orders-by-customer tool. `ground_truth/apex_delayed_orders.json` stays an answer key for checking that run, never an input.
+
+---
+
+### 6. What fell short (→ Challenge 7)
+* Exactly one round of tool calls: dependent lookups (order → its SKUs → stock → policy → draft) stop after step 1.
+* No tool to list or filter orders by customer, status or delay, so "every Apex order" can't even start.
+* Tool selection is 73% on the test prompts. The misses are mostly multi-step prompts, which a loop would fix.
+* Each LLM call re-sends ~1,380 tokens of tool definitions and prompt. A loop multiplies that, so Ch7 needs step limits and token budgets.
+* Still read-only: no cancel, refund or email actions (they need approvals and audit; later challenges).

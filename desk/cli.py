@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 from .chat import run_chat
-from .llm import DEFAULT_MODEL, LLMError, ask
+from .llm import DEFAULT_MODEL, LLMError, ask, model_for
 from .prompts import RAG_SYSTEM_PROMPT, SYSTEM_PROMPT
 from .session import DEFAULT_MAX_HISTORY_TOKENS, Session, count_tokens
 
@@ -33,8 +33,24 @@ def footer(r, env=os.environ):
     return f"--\ninput tokens: {r.input_tokens} | output tokens: {r.output_tokens}{est} | latency: {r.latency_s:.2f}s | est. cost: {cost_s}"
 
 
-def pick_model(args):
+def pick_model(args, role=None):
+    """--model > DESK_MODEL_<ROLE> (this command's model in .env) > DESK_MODEL > default."""
+    if role:
+        return model_for(role, getattr(args, "model", None))
     return args.model or os.getenv("DESK_MODEL") or DEFAULT_MODEL
+
+
+def temperature_note(args):
+    """Azure's GPT reasoning deployments and the current Anthropic SDK take no temperature: say so when one is given."""
+    from .llm import provider
+
+    try:
+        on_azure = provider() == "azure"
+    except LLMError:
+        return
+    if getattr(args, "temperature", None) is not None and on_azure:
+        print("note: --temperature is ignored on Azure - its GPT reasoning and Claude deployments only use their default",
+              file=sys.stderr)
 
 
 def temperature(value):
@@ -62,16 +78,19 @@ def cmd_ask(args, sleep=None, client=None, retrieve=None):
     if not args.question.strip():
         print("error: question is empty - try: desk ask \"your question\"", file=sys.stderr)
         return 2
-    model = pick_model(args)
+    model, rewrite_model = pick_model(args, "RAG"), model_for("REWRITE")
     extra = {"sleep": sleep} if sleep else {}
     log = lambda m: print(f"[retry] {m}", file=sys.stderr)  # noqa: E731
     debug = getattr(args, "debug", False)
+    temperature_note(args)
     question = args.question
     prev = getattr(args, "prev", None) or []
+    if debug:
+        print(f"[debug] answer model: {model}" + (f" | rewrite model: {rewrite_model}" if prev else ""), file=sys.stderr)
     if prev and not args.simulate:  # follow-up: make it standalone before searching
         history = [{"role": "user", "content": p} for p in prev]
         question = rag.rewrite_query(args.question, history, lambda system, user: ask(
-            user, system, model, temperature=0, client=client, log=log, **extra).text)
+            user, system, rewrite_model, temperature=0, client=client, log=log, **extra).text)
         if debug:
             print(f"[debug] follow-up rewritten to: {question}", file=sys.stderr)
     try:
@@ -118,7 +137,8 @@ def cmd_chat(args, sleep=None, client=None, input_fn=input):
     def chat_footer(r):
         return footer(r) + f" | history: ~{count_tokens(session.messages())}/{session.max_tokens} tokens"
 
-    return run_chat(session, pick_model(args), chat_footer, temperature=args.temperature, simulate=args.simulate,
+    temperature_note(args)
+    return run_chat(session, pick_model(args, "CHAT"), chat_footer, temperature=args.temperature, simulate=args.simulate,
                     client=client, sleep=sleep, input_fn=input_fn)
 
 
@@ -134,13 +154,14 @@ def cmd_extract(args, client=None, sleep=None):
     from .extract import Extractor, run_batch
     from .llm import make_client
 
+    model = pick_model(args, "EXTRACT")
     try:
-        client = client or make_client(timeout=60.0)
+        client = client or make_client(timeout=60.0, model=model)
     except LLMError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
     log = lambda m: print(m, file=sys.stderr)  # noqa: E731
-    ex = Extractor(client, pick_model(args), log=log, **({"sleep": sleep} if sleep else {}))
+    ex = Extractor(client, model, log=log, **({"sleep": sleep} if sleep else {}))
     try:
         s = run_batch(ex, data_dir() / "emails", OUT_DIR, data_dir() / "catalog.csv", log=log)
     except (FileNotFoundError, OSError) as e:
@@ -203,34 +224,149 @@ def cmd_eval_rag(args, client=None, sleep=None, corpora=None):
             return 1
     golden = rag_eval.load_golden(golden_path, args.limit)
     log = lambda m: print(m, file=sys.stderr)  # noqa: E731
-    if client is None:
+
+    def llm_for(model):
+        """One LLM per role; without a key, retrieval-only runs still work (rewrites fall back)."""
         try:
-            client = make_client(timeout=60.0)
+            c = client or make_client(timeout=60.0, model=model)
         except LLMError as e:
             if not args.no_faithfulness:
-                print(f"error: {e}", file=sys.stderr)
-                return 1
+                raise
             log(f"note: {e} - follow-up rewriting falls back to joining the previous question")
-    llm = rag_eval.GroqLLM(client, pick_model(args), log=log, **({"sleep": sleep} if sleep else {}))
+            c = None
+        return rag_eval.ChatLLM(c, model, log=log, **({"sleep": sleep} if sleep else {}))
+
     try:
+        rewriter = llm_for(model_for("REWRITE"))
         corpora = corpora or rag_eval.build_corpora(policies)
+    except LLMError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     except ImportError as e:
         print(f"error: {e.name or 'chromadb / rank-bm25'} is not installed - run: pip install -e .", file=sys.stderr)
         return 1
-    log(f"retrieval ablation over {len(golden)} questions ...")
+    log(f"retrieval ablation over {len(golden)} questions (follow-ups rewritten by {rewriter.model}) ...")
     rows, rewrites = rag_eval.run_ablation(corpora, golden, rag_eval.fixed_section_map(policies),
                                            rag_eval.effective_dates(policies),
-                                           lambda q, history: rag.rewrite_query(q, history, llm))
+                                           lambda q, history: rag.rewrite_query(q, history, rewriter))
     print(rag_eval.format_ablation(rows, len(golden)))
     for qid, query in rewrites.items():
         print(f"rewritten {qid}: {query}")
     if args.no_faithfulness:
         return 0
+    try:
+        answerer, judge = llm_for(pick_model(args, "RAG")), llm_for(model_for("JUDGE"))
+    except LLMError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     catalog = root / "catalog.csv" if args.catalog and (root / "catalog.csv").is_file() else None
-    log(f"answering + judging {len(golden)} questions with {llm.model} (slow on the free tier) ...")
-    results = rag_eval.run_faithfulness(corpora["sections"], golden, rewrites, llm, catalog, log=log)
+    log(f"answering {len(golden)} questions with {answerer.model}, judging with {judge.model} ...")
+    results = rag_eval.run_faithfulness(corpora["sections"], golden, rewrites, answerer, catalog, log=log, judge=judge)
     print()
-    print(rag_eval.format_faithfulness(results, llm))
+    print(rag_eval.format_faithfulness(results, answerer, judge))
+    return 0
+
+
+TOOL_NAMES = ["get_order", "search_catalog", "check_stock", "calculate", "search_policies"]
+
+
+def make_toolbox(args, retrieve=None):
+    """Toolbox over the seed data, or (None, error message) when a data file is missing."""
+    from .tools import Toolbox
+
+    root = data_dir()
+    db, catalog = root / "orders.db", root / "catalog.csv"
+    for path in (db, catalog):
+        if not path.is_file():
+            return None, f"{path} not found (set DESK_DATA_DIR to the folder that holds orders.db and catalog.csv)"
+    return Toolbox(db, catalog, retrieve=retrieve, fail=getattr(args, "fail_tool", None)), None
+
+
+def cmd_tools(args, client=None, sleep=None, retrieve=None):
+    """Challenge 6: answer with one round of tool calls (orders, stock, catalog, calculator, policies)."""
+    import json
+
+    from . import rag, tooluse
+    from .llm import SimulatedError, make_client
+
+    if not args.question.strip():
+        print("error: question is empty - try: desk tools \"Where is order MS-10422?\"", file=sys.stderr)
+        return 2
+    model = pick_model(args, "TOOLS")
+    toolbox, problem = make_toolbox(args, retrieve)
+    if problem:
+        print(f"error: {problem}", file=sys.stderr)
+        return 1
+    if args.debug:
+        print(f"[debug] model: {model}" + (" | tools: VAGUE check_stock description (stretch)" if args.vague else ""),
+              file=sys.stderr)
+
+    def show(call):
+        status = "ok" if call.ok else f"error {call.result['error']['code']}"
+        print(f"[tool] {call.name}({call.arguments}) -> {status} ({call.ms:.0f} ms)", file=sys.stderr)
+        if args.debug or not call.ok:
+            print(f"[tool]   {json.dumps(call.result, ensure_ascii=False)[:700]}", file=sys.stderr)
+
+    try:
+        client = client if (client or args.simulate) else make_client(timeout=60.0, model=model)
+        run = tooluse.answer(args.question, model, client, toolbox, vague=args.vague, sleep=sleep or time.sleep,
+                             log=lambda m: print(f"[retry] {m}", file=sys.stderr), on_call=show,
+                             simulate_error=SimulatedError(args.simulate) if args.simulate else None)
+    except LLMError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    if run.wanted:
+        wanted = ", ".join(f"{name}({arguments})" for name, arguments in run.wanted)
+        print(f"[tools] the model asked for a second round - NOT run: {wanted}. Desk does one round of tool calls; "
+              f"chained lookups need the agent loop (Challenge 7).", file=sys.stderr)
+    print(rag.normalize_citations(run.text) or "(the model returned no answer)", flush=True)
+    names = ", ".join(c.name for c in run.calls) or "none"
+    print(f"--\ntools run: {names} | LLM calls: {run.llm_calls} | model: {model}")
+    print(footer(run).removeprefix("--\n"))
+    return 0
+
+
+def cmd_eval_tools(args, client=None, sleep=None, retrieve=None):
+    """Stretch: does the model pick the expected tools for the 15 prompts in chat/tool_test_prompts.json?"""
+    import json
+
+    from . import tooluse
+    from .llm import make_client
+
+    path = data_dir() / "chat" / "tool_test_prompts.json"
+    if not path.is_file():
+        print(f"error: {path} not found (set DESK_DATA_DIR)", file=sys.stderr)
+        return 1
+    prompts = json.loads(path.read_text(encoding="utf-8"))[:args.limit or None]
+    model = pick_model(args, "TOOLS")
+    toolbox, problem = make_toolbox(args, retrieve)
+    if problem:
+        print(f"error: {problem}", file=sys.stderr)
+        return 1
+    try:
+        client = client or make_client(timeout=60.0, model=model)
+    except LLMError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    label = "VAGUE check_stock description" if args.vague else "normal descriptions"
+    print(f"Tool selection on {len(prompts)} prompts ({model}, {label})", flush=True)
+    passed = matched = expected_total = extra = llm_calls = tin = tout = 0
+    for i, item in enumerate(prompts, 1):
+        expected = item.get("expected_tools", [])
+        try:
+            run = tooluse.answer(item["prompt"], model, client, toolbox, vague=args.vague, sleep=sleep or time.sleep)
+            chosen = tooluse.selected_tools(run)
+            llm_calls, tin, tout = llm_calls + run.llm_calls, tin + run.input_tokens, tout + run.output_tokens
+        except LLMError as e:
+            chosen, run = [f"LLM error: {e}"], None
+        ok, m, x = tooluse.score_selection(expected, chosen) if run else (False, 0, 0)
+        passed, matched, expected_total, extra = passed + ok, matched + m, expected_total + len(expected), extra + x
+        print(f"{i:>2} {'PASS' if ok else 'FAIL'}  expected [{', '.join(expected) or 'no tool'}] -> chose "
+              f"[{', '.join(chosen) or 'no tool'}]  {item['prompt'][:60]}", flush=True)
+    n = len(prompts) or 1
+    print(f"passed: {passed}/{len(prompts)} ({100 * passed / n:.0f}%) | expected tools chosen: {matched}/{expected_total}"
+          f" | extra tool calls: {extra} | LLM calls: {llm_calls} | tokens: in {tin} / out {tout}")
+    print("chose = the round that ran + any second round the model asked for (not run)")
     return 0
 
 
@@ -247,18 +383,32 @@ def build_parser():
     c = sub.add_parser("chat", help="multi-turn streaming chat (/reset /save /load /exit)")
     c.add_argument("--pin-first", action="store_true", help="never drop the first user message from history")
     for s in (a, c):
-        s.add_argument("--model", help=f"overrides DESK_MODEL (default {DEFAULT_MODEL})")
+        s.add_argument("--model", help="overrides this command's model in .env (DESK_MODEL_RAG for ask, DESK_MODEL_CHAT for chat)")
         s.add_argument("--temperature", type=temperature, help="sampling temperature 0-2, e.g. 0 or 1")
         s.add_argument("--simulate", choices=["429", "timeout", "network"], help="force a failure to test retry logic without calling the API")
     e = sub.add_parser("extract", help="extract an OrderRequest from every email into data/results.jsonl")
-    e.add_argument("--model", help=f"overrides DESK_MODEL (default {DEFAULT_MODEL})")
+    e.add_argument("--model", help="overrides DESK_MODEL_EXTRACT (set in .env)")
     sub.add_parser("ingest", help="chunk the policy docs by heading into the local Chroma index (safe to re-run)")
     ev = sub.add_parser("eval-rag", help="Recall@5 / MRR ablation + LLM-judged faithfulness on the golden questions")
-    ev.add_argument("--model", help=f"answer + judge model; overrides DESK_MODEL (default {DEFAULT_MODEL})")
+    ev.add_argument("--model", help="answer model; overrides DESK_MODEL_RAG (judge: DESK_MODEL_JUDGE, rewrites: DESK_MODEL_REWRITE)")
     ev.add_argument("--limit", type=int, help="only the first N golden questions (quick runs)")
     ev.add_argument("--no-faithfulness", action="store_true", help="retrieval metrics only (no answer/judge calls)")
     ev.add_argument("--catalog", action="store_true", help="give the model catalog.csv rows for SKUs, as desk ask --catalog")
     sub.add_parser("accuracy", help="field-level accuracy of data/results.jsonl against the 15 hand labels")
+    t = sub.add_parser("tools", help="answer with tools: live orders, stock, catalog, calculator, policies "
+                                     "(one round of tool calls)")
+    t.add_argument("question")
+    t.add_argument("--debug", action="store_true", help="print every tool result sent back to the model")
+    t.add_argument("--fail-tool", action="append", choices=TOOL_NAMES, metavar="TOOL",
+                   help="make this tool crash, to see the failure go back to the model as a structured error "
+                        f"(repeatable; one of {', '.join(TOOL_NAMES)})")
+    t.add_argument("--simulate", choices=["429", "timeout", "network"], help="force an LLM failure to test retries")
+    et = sub.add_parser("eval-tools", help="tool-selection check on chat/tool_test_prompts.json (15 prompts)")
+    et.add_argument("--limit", type=int, help="only the first N prompts")
+    for s in (t, et):
+        s.add_argument("--model", help="overrides DESK_MODEL_TOOLS (set in .env)")
+        s.add_argument("--vague", action="store_true",
+                       help="stretch: give check_stock a deliberately vague description and watch tool choice degrade")
     return p
 
 
@@ -269,7 +419,7 @@ def main(argv=None):
     utf8_output()
     args = build_parser().parse_args(argv)
     sys.exit({"ask": cmd_ask, "chat": cmd_chat, "ingest": cmd_ingest, "eval-rag": cmd_eval_rag, "extract": cmd_extract,
-              "accuracy": cmd_accuracy}[args.cmd](args))
+              "accuracy": cmd_accuracy, "tools": cmd_tools, "eval-tools": cmd_eval_tools}[args.cmd](args))
 
 
 if __name__ == "__main__":

@@ -1,17 +1,16 @@
 """Run the Challenge 1 'Break it' + stretch experiments live and print Markdown for NOTES.md.
 
-Usage:  python scripts/break_it.py [--write]     (needs GROQ_API_KEY; model from DESK_MODEL)
+Usage:  python scripts/break_it.py [--write]     (model from DESK_MODEL_ONECALL, else DESK_MODEL)
 --write appends the results to NOTES.md.
 """
 import argparse
-import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from desk.cli import estimate_cost, utf8_output  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
-from desk.llm import DEFAULT_MODEL, LLMError, ask  # noqa: E402
+from desk.llm import LLMError, ask, model_for  # noqa: E402
 from desk.prompts import SYSTEM_PROMPT  # noqa: E402
 
 
@@ -30,9 +29,7 @@ def main():
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
     load_dotenv()
-    model = os.environ.get("DESK_MODEL") or DEFAULT_MODEL
-    if not os.environ.get("GROQ_API_KEY"):
-        sys.exit("Set GROQ_API_KEY first (see .env.example).")
+    model = model_for("ONECALL")  # Challenge 1: one plain call
     out = ["\n## Challenge 1 - live Break it run\n"]
     try:
         q1, q2 = "My name is Ravi", "What is my name?"

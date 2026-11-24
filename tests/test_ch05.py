@@ -392,7 +392,7 @@ class EvalHarnessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             corpus = corpus_for(d)
             seen = []
-            llm = rag_eval.GroqLLM(fake_client([
+            llm = rag_eval.ChatLLM(fake_client([
                 "7 days under the terms effective 2026-03-01【returns_opened_items.md#2】",
                 '{"faithful": true, "correct": true, "reason": "supported"}',
                 "Only SafeHaul [hazardous_goods.md#2] and DHL.",
@@ -408,7 +408,23 @@ class EvalHarnessTests(unittest.TestCase):
         report = rag_eval.format_faithfulness(results, llm)
         self.assertIn("faithful to context: 1/2 (50.0%)", report)
         self.assertIn("DHL is not in the context", report)
-        self.assertIn("LLM calls: 4", report)
+        self.assertIn("answers (judge-model): 4 LLM calls", report)
+
+    def test_separate_answer_and_judge_models(self):
+        with tempfile.TemporaryDirectory() as d:
+            corpus = corpus_for(d)
+            a_seen, j_seen = [], []
+            answerer = rag_eval.ChatLLM(fake_client(["7 days [returns_opened_items.md#2]"], a_seen), "claude-sonnet-5-5")
+            judge = rag_eval.ChatLLM(fake_client(['{"faithful": true, "correct": true, "reason": "ok"}'], j_seen),
+                                     "gpt-6.2-sol")
+            results = rag_eval.run_faithfulness(corpus, GOLDEN[:1], {}, answerer, judge=judge)
+        self.assertEqual(([k["model"] for k in a_seen], [k["model"] for k in j_seen]),
+                         (["claude-sonnet-5-5"], ["gpt-6.2-sol"]))
+        self.assertEqual(j_seen[0]["messages"][0]["content"], JUDGE_PROMPT)
+        report = rag_eval.format_faithfulness(results, answerer, judge)
+        self.assertIn("answers by claude-sonnet-5-5, judged by gpt-6.2-sol", report)
+        self.assertIn("answers (claude-sonnet-5-5): 1 LLM calls", report)
+        self.assertIn("judge (gpt-6.2-sol): 1 LLM calls", report)
 
     def test_eval_rag_cli_retrieval_only(self):
         with tempfile.TemporaryDirectory() as d:

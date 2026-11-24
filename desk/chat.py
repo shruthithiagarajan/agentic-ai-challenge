@@ -16,7 +16,7 @@ def run_chat(session, model, footer, temperature=None, simulate=None, client=Non
 
     if client is None and not simulate:
         try:
-            client = make_client()  # one client for the whole chat
+            client = make_client(model=model)  # one client for the whole chat
         except LLMError as e:
             print(f"error: {e}", file=err)
             return 1

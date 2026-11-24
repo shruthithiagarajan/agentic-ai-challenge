@@ -156,8 +156,11 @@ def format_ablation(rows, n):
     return "\n".join(lines)
 
 
-class GroqLLM:
-    """complete(system, user, json_mode=False) -> text, with batch-friendly retries and token counting."""
+class ChatLLM:
+    """complete(system, user, json_mode=False) -> text, with batch-friendly retries and token counting.
+
+    One instance per role (answerer, judge, rewriter), each with its own model and token tally.
+    """
 
     def __init__(self, client, model, sleep=time.sleep, log=lambda m: None):
         self.client, self.model, self.sleep, self.log = client, model, sleep, log
@@ -165,7 +168,7 @@ class GroqLLM:
 
     def __call__(self, system, user, json_mode=False):
         if self.client is None:
-            raise LLMError("no Groq client (GROQ_API_KEY not set)", 0)
+            raise LLMError(f"no client for {self.model} (API key not set)", 0)
         kwargs = dict(model=self.model, temperature=0,
                       messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
         if json_mode:
@@ -191,8 +194,9 @@ def parse_verdict(text):
             "reason": str(data.get("reason", ""))}
 
 
-def run_faithfulness(corpus, golden, rewrites, llm, catalog_path=None, pipeline=None, log=lambda m: None):
-    """Answer every question with the full pipeline, then have the judge grade the answer."""
+def run_faithfulness(corpus, golden, rewrites, llm, catalog_path=None, pipeline=None, log=lambda m: None, judge=None):
+    """Answer every question with the full pipeline (llm), then have the judge (default: the same llm) grade it."""
+    judge = judge or llm
     results = []
     for item in golden:
         query = rewrites.get(item["id"], item["question"])
@@ -206,7 +210,7 @@ def run_faithfulness(corpus, golden, rewrites, llm, catalog_path=None, pipeline=
             result["refusal"] = rag.is_refusal(result["answer"])
             judge_input = (f"CONTEXT:\n{context}\n\nQUESTION: {query}\n\nANSWER: {result['answer']}\n\n"
                            f"REFERENCE: {item['expected_answer']}")
-            result.update(parse_verdict(llm(JUDGE_PROMPT, judge_input, json_mode=True)))
+            result.update(parse_verdict(judge(JUDGE_PROMPT, judge_input, json_mode=True)))
         except LLMError as e:
             result.update({"faithful": None, "correct": None, "reason": f"LLM error: {e}"})
         log(f"{item['id']}: faithful={result['faithful']} correct={result['correct']}")
@@ -214,17 +218,20 @@ def run_faithfulness(corpus, golden, rewrites, llm, catalog_path=None, pipeline=
     return results
 
 
-def format_faithfulness(results, llm=None):
+def format_faithfulness(results, llm=None, judge=None):
     n = len(results)
     pct = lambda x: f"{x}/{n} ({100 * x / n:.1f}%)" if n else "0/0"  # noqa: E731
     faithful = sum(r["faithful"] is True for r in results)
     correct = sum(r["correct"] is True for r in results)
     errors = sum(r["faithful"] is None for r in results)
-    lines = [f"Faithfulness (LLM judge{f', {llm.model}' if llm else ''}) on {n} full-pipeline answers",
+    judge = judge or llm
+    who = f" - answers by {llm.model}, judged by {judge.model}" if llm else ""
+    lines = [f"Faithfulness (LLM judge) on {n} full-pipeline answers{who}",
              f"faithful to context: {pct(faithful)} | agrees with reference: {pct(correct)} | "
              f"refusals: {sum(r['refusal'] for r in results)} | judge/LLM errors: {errors}"]
-    if llm:
-        lines.append(f"LLM calls: {llm.calls} | tokens: in {llm.input_tokens} / out {llm.output_tokens}")
+    for role, m in (("answers", llm), ("judge", judge if judge is not llm else None)):
+        if m:
+            lines.append(f"{role} ({m.model}): {m.calls} LLM calls | tokens: in {m.input_tokens} / out {m.output_tokens}")
     bad = [r for r in results if r["faithful"] is not True or r["correct"] is not True]
     if bad:
         lines.append("Not faithful or not correct:")

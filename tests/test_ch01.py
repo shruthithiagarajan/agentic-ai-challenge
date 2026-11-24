@@ -200,5 +200,170 @@ class CliTests(unittest.TestCase):
         self.assertIn("non‑breaking".encode("utf-8"), raw.getvalue())
 
 
+# ---- Azure AI Foundry provider (GPT via openai SDK, Claude via anthropic SDK) ----
+
+AZURE_ENV = {"AZURE_AI_API_KEY": "k", "AZURE_OPENAI_BASE_URL": "https://r.services.ai.azure.com/openai/v1",
+             "AZURE_ANTHROPIC_BASE_URL": "https://r.services.ai.azure.com/anthropic"}
+
+
+def claude_message(text="Paris", stop="end_turn", pin=23, pout=5):
+    return SimpleNamespace(content=[SimpleNamespace(type="thinking", thinking=""), SimpleNamespace(type="text", text=text)],
+                           stop_reason=stop, stop_details=None, usage=SimpleNamespace(input_tokens=pin, output_tokens=pout))
+
+
+class FakeStream:
+    def __init__(self, pieces, final):
+        self.text_stream, self.final = iter(pieces), final
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def get_final_message(self):
+        return self.final
+
+
+def fake_anthropic(message=None, stream=None, seen=None):
+    def record(result):
+        return lambda **kw: (seen.append(kw) if seen is not None else None) or result
+    return SimpleNamespace(messages=SimpleNamespace(create=record(message), stream=record(stream)))
+
+
+class BadRequestError(Exception):  # name-matches openai.BadRequestError
+    status_code = 400
+
+
+class ProviderTests(unittest.TestCase):
+    def test_provider_selection(self):
+        cases = [({}, "groq"), ({"AZURE_AI_API_KEY": "k"}, "azure"),
+                 ({"AZURE_AI_API_KEY": "k", "DESK_PROVIDER": "groq"}, "groq"), ({"DESK_PROVIDER": " Azure "}, "azure")]
+        for env, want in cases:
+            with self.subTest(env=env), mock.patch.dict(os.environ, env, clear=True):
+                self.assertEqual(llm.provider(), want)
+        with mock.patch.dict(os.environ, {"DESK_PROVIDER": "openai"}, clear=True), self.assertRaises(LLMError):
+            llm.provider()
+
+    def test_make_client_routes_claude_models_to_anthropic(self):
+        with mock.patch.dict(os.environ, AZURE_ENV, clear=True):
+            self.assertIsInstance(llm.make_client(model="claude-sonnet-5-5"), llm.ClaudeChat)
+            self.assertIsInstance(llm.make_client(model="gpt-6.2-sol"), llm.AzureGPT)
+
+    def test_missing_azure_settings_are_clear_errors(self):
+        with mock.patch.dict(os.environ, {"DESK_PROVIDER": "azure"}, clear=True), self.assertRaises(LLMError) as cm:
+            llm.make_client(model="gpt-6.2-sol")
+        self.assertIn("AZURE_AI_API_KEY is not set", str(cm.exception))
+        env = dict(AZURE_ENV, AZURE_ANTHROPIC_BASE_URL="")
+        with mock.patch.dict(os.environ, env, clear=True), self.assertRaises(LLMError) as cm:
+            llm.make_client(model="claude-sonnet-5-5")
+        self.assertIn("AZURE_ANTHROPIC_BASE_URL is not set", str(cm.exception))
+
+    def test_each_challenge_role_gets_its_own_model(self):
+        env = {"DESK_MODEL": "fallback", "DESK_MODEL_CHAT": "claude-sonnet-5-5", "DESK_MODEL_EXTRACT": "gpt-6.2-sol"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(llm.model_for("CHAT"), "claude-sonnet-5-5")
+            self.assertEqual(llm.model_for("EXTRACT"), "gpt-6.2-sol")
+            self.assertEqual(llm.model_for("JUDGE"), "fallback")  # role not set -> DESK_MODEL
+            self.assertEqual(llm.model_for("CHAT", override="from-flag"), "from-flag")  # --model wins
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(llm.model_for("RAG"), llm.DEFAULT_MODEL)
+        self.assertEqual(set(llm.ROLES), {"ONECALL", "CHAT", "EXTRACT", "RAG", "REWRITE", "JUDGE", "TOOLS"})
+
+    def test_commands_use_their_role_model(self):
+        env = {"DESK_MODEL_RAG": "rag-model", "DESK_MODEL_REWRITE": "rewrite-model", "DESK_MODEL_CHAT": "chat-model"}
+        seen = []
+        client = fake_client(lambda **kw: seen.append(kw["model"]) or ok_response("standalone query [a.md#1]"))
+        args = cli.build_parser().parse_args(["ask", "and for 30,000?", "--prev", "Freight on 18,000?"])
+        with mock.patch.dict(os.environ, env, clear=True), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            cli.cmd_ask(args, client=client, retrieve=lambda q: [rag.Hit("a.md#1", "x", 0.1)])
+            self.assertEqual(cli.pick_model(cli.build_parser().parse_args(["chat"]), "CHAT"), "chat-model")
+        self.assertEqual(seen, ["rewrite-model", "rag-model"])  # rewrite first, then the grounded answer
+
+    def test_messages_name_the_active_provider(self):
+        with mock.patch.dict(os.environ, AZURE_ENV, clear=True):
+            self.assertIn("Azure AI Foundry", llm.retry_reason(APIConnectionError()))
+            self.assertIn("AZURE_AI_API_KEY", llm.describe(AuthenticationError()))
+
+
+class AzureGPTTests(unittest.TestCase):
+    def test_temperature_dropped_after_the_deployment_rejects_it(self):
+        calls = []
+
+        def create(**kw):
+            calls.append(dict(kw))
+            if "temperature" in kw:
+                raise BadRequestError("Unsupported value: 'temperature' does not support 0 with this model.")
+            return ok_response("Paris")
+
+        gpt = llm.AzureGPT(fake_client(create))
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            r = llm.ask("Q?", "S", "gpt-6.2-sol", temperature=0.0, client=gpt)
+            llm.ask("Q?", "S", "gpt-6.2-sol", temperature=0.0, client=gpt)
+        self.assertEqual(r.text, "Paris")
+        self.assertEqual(["temperature" in c for c in calls], [True, False, False])  # rejected once, then never sent
+        self.assertEqual(err.getvalue(), "")  # internal temperature=0 calls stay quiet; the CLI notes a user's --temperature
+
+    def test_cli_notes_an_ignored_temperature_on_azure_only(self):
+        args = cli.build_parser().parse_args(["ask", "hi", "--temperature", "0"])
+        for env, expect in ((AZURE_ENV, True), ({}, False)):
+            with self.subTest(env=bool(env)), mock.patch.dict(os.environ, env, clear=True), \
+                    contextlib.redirect_stderr(io.StringIO()) as err:
+                cli.temperature_note(args)
+            self.assertEqual("--temperature is ignored on Azure" in err.getvalue(), expect)
+
+    def test_other_bad_requests_are_not_swallowed(self):
+        def create(**kw):
+            raise BadRequestError("context length exceeded")
+
+        with self.assertRaises(LLMError):
+            llm.ask("Q?", "S", "gpt-6.2-sol", temperature=0.0, client=llm.AzureGPT(fake_client(create)))
+
+
+class ClaudeChatTests(unittest.TestCase):
+    def test_maps_openai_style_call_to_anthropic_messages(self):
+        seen = []
+        claude = llm.ClaudeChat(fake_anthropic(message=claude_message(), seen=seen), max_tokens=1000)
+        r = llm.ask("Capital of France?", "Be brief.", "claude-sonnet-5-5", temperature=0.0, client=claude)
+        self.assertEqual((r.text, r.input_tokens, r.output_tokens), ("Paris", 23, 5))  # thinking block skipped
+        self.assertEqual(seen[0], {"model": "claude-sonnet-5-5", "max_tokens": 1000, "system": "Be brief.",
+                                   "messages": [{"role": "user", "content": "Capital of France?"}]})  # no temperature
+
+    def test_max_tokens_from_env(self):
+        with mock.patch.dict(os.environ, {"DESK_MAX_TOKENS": "2048"}, clear=True):
+            self.assertEqual(llm.ClaudeChat(fake_anthropic()).max_tokens, 2048)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(llm.ClaudeChat(fake_anthropic()).max_tokens, llm.CLAUDE_MAX_TOKENS)
+
+    def test_json_response_format_becomes_an_instruction_and_fences_are_stripped(self):
+        seen = []
+        claude = llm.ClaudeChat(fake_anthropic(message=claude_message('```json\n{"city": "Paris"}\n```'), seen=seen))
+        fmt = {"type": "json_schema", "json_schema": {"name": "A", "schema": {"type": "object"}, "strict": False}}
+        resp = claude.chat.completions.create(model="claude-sonnet-5-5", response_format=fmt,
+                                              messages=[{"role": "system", "content": "Extract."},
+                                                        {"role": "user", "content": "Email"}])
+        self.assertEqual(resp.choices[0].message.content, '{"city": "Paris"}')
+        self.assertIn('ONE JSON object only', seen[0]["system"])
+        self.assertIn('{"type": "object"}', seen[0]["system"])
+
+    def test_refusal_is_a_clear_error_and_not_retried(self):
+        sleeps = []
+        claude = llm.ClaudeChat(fake_anthropic(message=claude_message("", stop="refusal")))
+        with self.assertRaises(LLMError) as cm:
+            llm.ask("Q?", "S", "claude-sonnet-5-5", client=claude, sleep=sleeps.append)
+        self.assertIn("Claude declined the request", str(cm.exception))
+        self.assertEqual(sleeps, [])
+
+    def test_streaming_yields_text_then_usage(self):
+        final = claude_message("Hello there", pin=30, pout=4)
+        claude = llm.ClaudeChat(fake_anthropic(stream=FakeStream(["Hello", " there"], final)))
+        tokens = []
+        r = llm.stream_chat([{"role": "system", "content": "S"}, {"role": "user", "content": "hi"}],
+                            "claude-sonnet-5-5", client=claude, on_token=tokens.append)
+        self.assertEqual((tokens, r.text, r.input_tokens, r.output_tokens, r.estimated),
+                         (["Hello", " there"], "Hello there", 30, 4, False))
+
+
 if __name__ == "__main__":
     unittest.main()
