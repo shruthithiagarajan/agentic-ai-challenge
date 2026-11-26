@@ -268,7 +268,7 @@ class ProviderTests(unittest.TestCase):
             self.assertEqual(llm.model_for("CHAT", override="from-flag"), "from-flag")  # --model wins
         with mock.patch.dict(os.environ, {}, clear=True):
             self.assertEqual(llm.model_for("RAG"), llm.DEFAULT_MODEL)
-        self.assertEqual(set(llm.ROLES), {"ONECALL", "CHAT", "EXTRACT", "RAG", "REWRITE", "JUDGE", "TOOLS"})
+        self.assertEqual(set(llm.ROLES), {"ONECALL", "CHAT", "EXTRACT", "RAG", "REWRITE", "JUDGE", "TOOLS", "AGENT"})
 
     def test_commands_use_their_role_model(self):
         env = {"DESK_MODEL_RAG": "rag-model", "DESK_MODEL_REWRITE": "rewrite-model", "DESK_MODEL_CHAT": "chat-model"}

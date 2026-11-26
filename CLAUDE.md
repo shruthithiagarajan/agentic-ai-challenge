@@ -4,9 +4,10 @@ Project: **Desk**, the customer-operations assistant for the fictional Meridian 
 
 ## Commands
 - Install: `pip install -e .`
-- Config: copy `.env.example` to `.env` and fill `AZURE_AI_API_KEY` + the two Azure base URLs; `DESK_MODEL` is the deployment (`gpt-6.2-sol`, or `claude-sonnet-5-5` - names starting with `claude` use the Anthropic endpoint). Groq is kept but commented out (`DESK_PROVIDER=groq` + `GROQ_API_KEY` to switch back). Each challenge's command has its own model, `DESK_MODEL_<ROLE>` (ONECALL, CHAT, EXTRACT, RAG, REWRITE, JUDGE, TOOLS; see `llm.ROLES`), with `--model` overriding and `DESK_MODEL` as the fallback. Loaded via python-dotenv
+- Config: copy `.env.example` to `.env` and fill `AZURE_AI_API_KEY` + the two Azure base URLs; `DESK_MODEL` is the deployment (`gpt-6.2-sol`, or `claude-sonnet-5-5` - names starting with `claude` use the Anthropic endpoint). Groq is kept but commented out (`DESK_PROVIDER=groq` + `GROQ_API_KEY` to switch back). Each challenge's command has its own model, `DESK_MODEL_<ROLE>` (ONECALL, CHAT, EXTRACT, RAG, REWRITE, JUDGE, TOOLS, AGENT; see `llm.ROLES`), with `--model` overriding and `DESK_MODEL` as the fallback. Loaded via python-dotenv
 - Run: `desk ask "question"` (flags: `--model`, `--temperature`, `--simulate 429|timeout|network`)
 - Ch6 tools: `desk tools "question"` (flags: `--debug`, `--fail-tool NAME`, `--vague`, `--simulate`) and `desk eval-tools` (tool selection on `chat/tool_test_prompts.json`). Tool calls on Azure GPT go through `/v1/responses` (chat.completions rejects tools with reasoning on); every call is logged to `data/tool_calls.jsonl`
+- Ch7 agent: `desk agent "task"` or `desk agent --preset apex|impossible|repeat` (flags: `--plan`, `--max-steps`, `--max-tokens`, `--max-cost`, `--timeout`, `--show-results`, `--fail-tool`); exit 3 = stopped on a limit. Trace per run in `data/agent_traces/`, drafts in `meridian_desk_data/outbox/` (never sent)
 - Test (offline, no key): `python -m unittest -v`
 - Live Break it run: `python scripts/break_it.py --write`
 

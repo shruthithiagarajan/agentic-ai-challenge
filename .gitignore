@@ -16,3 +16,8 @@ data/needs_review.jsonl
 .chroma/
 
 data/tool_calls.jsonl
+
+# desk agent outputs: run traces and email drafts (drafts are never sent)
+data/agent_traces/
+meridian_desk_data/outbox/*
+!meridian_desk_data/outbox/.gitkeep

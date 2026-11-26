@@ -416,3 +416,182 @@ bye
 * Tool selection is 73% on the test prompts. The misses are mostly multi-step prompts, which a loop would fix.
 * Each LLM call re-sends ~1,380 tokens of tool definitions and prompt. A loop multiplies that, so Ch7 needs step limits and token budgets.
 * Still read-only: no cancel, refund or email actions (they need approvals and audit; later challenges).
+
+---
+
+## Challenge 7: The agent loop, from scratch (`ch07`)
+**Provider / Model:** Azure AI Foundry `claude-sonnet-5-5` (`DESK_MODEL_AGENT`, Anthropic SDK `AnthropicFoundry`) · also runs on `gpt-6.2-sol` via `--model` · **No framework:** the loop is `desk/agent.py` (~270 lines incl. trace formatting and the early-stop report)
+
+### 1. Why We Built This: Ch6 vs. Ch7
+
+| | Challenge 6: Tool calling | Challenge 7: Agent loop |
+| :--- | :--- | :--- |
+| **Command** | `desk tools "question"` | `desk agent "task"` / `desk agent --preset apex\|impossible\|repeat` |
+| **Model** | `gpt-6.2-sol` | `claude-sonnet-5-5` |
+| **Rounds of tool calls** | Exactly **one**; a requested 2nd round is recorded, not run | **As many as needed**, until the model answers without a tool call or a limit stops it |
+| **Who plans** | Effectively *us*: anything multi-step needed a human or hard-coded sequence | **The model**: it sees each result and decides the next step |
+| **Tools** | 5: `get_order`, `search_catalog`, `check_stock`, `calculate`, `search_policies` | Same 5 + `list_orders` (find orders by customer), `draft_email` (writes to `outbox/` only) + `todo` with `--plan` |
+| **Retrieval** | `search_policies` called once, if at all | **Agentic RAG**: the agent searches when it wants, refines the query and searches again (e.g. "2027 price list" → "price list effective 2027 price changes annual revision") |
+| **Writes anything?** | No | Only email **drafts** in `meridian_desk_data/outbox/`, marked `DRAFT - NOT SENT`. Nothing is sent and the database stays read-only |
+| **Safety limits** | 8 calls per reply | Max steps (25), token budget (500k), cost budget ($0.50, when prices are set), wall clock (300 s), 3rd identical call stops the run, 20 calls per turn |
+| **Observability** | One JSONL line per tool call (`data/tool_calls.jsonl`) | Plus a **per-step trace**, live on screen and as `data/agent_traces/<time>_<model>.jsonl`: step, tool, arguments, result size, ms, tokens, result preview |
+| **When it can't finish** | Answers with what it has | Exit code **3** and a "STOPPED … Managed …" report built from the trace (no extra LLM call, so no extra spend) |
+| **Apex Break it task** | 1 tool call, then *"Please send the Apex order IDs"* | **Completed**: 6 steps, 35 tool calls, 8 drafts, every credit correct |
+| **MS-10388 "is everything in stock?"** | `get_order`, then *"I couldn't verify current stock"* (2nd round not run) | `get_order` → `check_stock` ×2 → *"Everything in the order is in stock"* (3 steps, 12,298 tokens) |
+
+---
+
+### 2. What Was Built
+* **The loop (`desk/agent.py`):**
+  1. Check the limits (steps, wall clock).
+  2. Call the model with the full history and the tools.
+  3. If there are no tool calls, the model is finished (`done`).
+  4. Otherwise check the token and cost budget, run every tool call (with the repeat detector and per-turn cap), append one result per call, and loop.
+* **Stop conditions:** `max_steps`, `max_tokens`, `max_cost` (only when `DESK_PRICE_IN` / `DESK_PRICE_OUT` are set; they are not, so the footer shows `est. cost: n/a`), `timeout`, `repeated_call`. Each has a clear reason and detail in the trace.
+* **New tools:**
+  * `list_orders(customer, status, min_days_late)` matches the customer by name or id and returns orders with days late and their lines, plus the contact email.
+  * `draft_email(to, subject, body)` writes a `.txt` draft into the outbox. The filename is sanitised, so it can't escape the folder.
+  * `todo(items)` is the stretch tool: a plan checklist.
+* **Prompt (`AGENT_SYSTEM_PROMPT`):** work in steps, call independent tools together, every number through `calculate`, re-search policies when results don't answer, drafts are never "sent", don't repeat identical calls, and finish with a summary that lists what could not be done.
+* **Unit Tests (`python -m unittest -v`):** Passed: **208/208** (23 new in `tests/test_ch07.py`, scripted fake client, fake clock). They cover:
+  * the new tools, including outbox containment;
+  * a multi-step run to completion with full history;
+  * the trace events and file;
+  * each stop condition and its report;
+  * the repeat detector with differently spaced JSON;
+  * the per-turn cap;
+  * tool failures fed back;
+  * plan mode;
+  * retry on 429;
+  * Responses-API items handed back;
+  * the CLI (exit codes 0 / 1 / 2 / 3, presets).
+
+---
+
+### 3. Build & Acceptance Verification ("Done when")
+
+#### ✅ The Apex task from Challenge 6 completes end to end in one run
+* **Command Run:** `desk agent --preset apex`
+* **Trace (condensed):**
+
+| Step | Model tokens (in / out) | Tool calls | What the agent did |
+| :--- | :--- | :--- | :--- |
+| 1 | 3,536 / 131 | 2 | `list_orders("Apex", min_days_late=6)` + `search_policies("delayed order apology compensation days late")`, in parallel |
+| 2 | 6,249 / 1,326 | 22 | `check_stock` for all 14 SKUs + 8 credit `calculate`s. The last 2 hit the 20-per-turn cap (`too_many_calls`) |
+| 3 | 9,287 / 362 | 2 | Re-ran the 2 capped calculations, including `27900*0.05`, the wrong tier (already wrong in step 2) |
+| 4 | 9,508 / 407 | 1 | **Corrected itself:** `27900*0.08` (MS-10463 is 21 days late, so the > 20 days tier, 8%) |
+| 5 | 9,597 / 4,258 | 8 | `draft_email` × 8, one per order |
+| 6 | 14,351 / 870 | 0 | Final summary table |
+
+* **Result:** `stop: done | steps: 6 | tool calls: 35 | LLM calls: 6`, 52,528 in / 7,354 out tokens, 44.8 s. There were 8 files in `meridian_desk_data\outbox` (930–1,140 bytes each).
+* **Checked against `ground_truth/apex_delayed_orders.json`** (used only for checking; never given to the agent):
+
+| Order | Days late | Stock verdict | Credit (agent) | Credit (answer key) |
+| :--- | :--- | :--- | :--- | :--- |
+| MS-10388 | 6 | all in stock | ₹1,347 | ₹1,347 ✅ |
+| MS-10401 | 7 | VLV0300 + GSK0101 out | ₹894 | ₹894 ✅ |
+| MS-10415 | 9 | BRG0110 only 5 of 30 | ₹1,559.61 | ₹1,559.61 ✅ |
+| MS-10433 | 11 | all in stock | ₹5,685 | ₹5,685 ✅ |
+| MS-10447 | 14 | all in stock | ₹1,552.50 | ₹1,552.50 ✅ |
+| MS-10452 | 17 | all in stock | ₹6,810 | ₹6,810 ✅ |
+| MS-10463 | 21 | VLV0300 out | ₹2,232 | ₹2,232 ✅ |
+| MS-10471 | 26 | GSK0101 out | ₹2,080 | ₹2,080 ✅ |
+
+  * The 8 orders and every stock verdict match the answer key.
+  * MS-10478 and MS-10485 (3 and 4 days late) were correctly excluded by `min_days_late=6`.
+  * MS-10023 (delivered 9 days late in July) was deliberately left out as "not currently delayed".
+  * The drafts quote `[shipping_delays.md#3]`, and `#4` (the backorder cancellation right) for out-of-stock lines. They also flag that `[shipping_delays.md#2]` requires a new expected date and reason, which the data doesn't have.
+
+#### ✅ A deliberately impossible task stops on budget and reports what it managed
+* **Command Run:** `desk agent "Reconcile every order against the 2027 price list and email each customer the variance." --max-tokens 6000`
+* **What Happened:**
+  * **Step 1:** `search_policies("2027 price list")` + `search_catalog("2027 price list")`.
+  * **Step 2:** the model asked for a refined search, but the run was over budget: `stop: max_tokens (8,416 tokens > 6,000)`, exit code 3.
+  * **Report:** *"STOPPED before finishing: token budget used up… Managed in 2 step(s): search_policies x1, search_catalog x1. No drafts were saved. Next calls the model wanted (not run): search_policies({"query": "price list effective 2027 price changes annual revision"})."*
+* **Also:** `desk agent --preset apex --max-steps 2` stopped with `max_steps`. Its report:
+  * *Managed:* `list_orders x1, search_policies x1, check_stock x14, calculate x6`;
+  * *Failed calls:* `calculate [too_many_calls] x2`;
+  * *Orders looked at:* the 9 order ids;
+  * *No drafts were saved.*
+* **Without a budget squeeze:** `desk agent --preset impossible` finished honestly in **2 steps** (8,475 tokens): *"No 2027 price list exists… Sending customers made-up numbers would be worse than sending nothing."* The preset's task text gives it away ("No 2027 price list exists"), and a strong model stops by itself, so we need a tight budget to watch the budget stop fire.
+
+#### ✅ You can follow the run by reading the trace
+* **Command Run:** `desk agent "Where is order MS-10388 and is everything in it in stock?" --show-results`, then `Get-Content` on the newest file in `data\agent_traces`.
+* **What Happened:** The live trace shows each step and tool call with arguments, result size and ms, plus the result preview with `--show-results`. The JSONL file holds the same events: `start`, `turn` ×3, `tool` ×3, `stop`.
+  * **Step 1:** `get_order` (795 chars).
+  * **Step 2:** `check_stock` ×2 in parallel (640 pcs, 4,200 pcs).
+  * **Step 3:** the final answer, at a running total of 12,298 tokens.
+* **Encoding note:** Windows PowerShell 5.1 displayed `₹` as `â‚¹` because `Get-Content` assumes ANSI. The file is valid UTF-8; read it with `Get-Content -Encoding utf8 <file>`.
+
+#### Edge cases (live)
+| Command | Result | Verdict |
+| :--- | :--- | :--- |
+| `desk agent --preset repeat` | 1 `check_stock` (0 pcs), then: *"I can't keep checking until it goes above zero… I have no way to wait or monitor stock"* (2 steps) | ✅ No loop. The prompt rule ("don't repeat identical calls") was enough, so the code-level detector (3rd identical call → `repeated_call`) stayed the unit-tested backstop |
+| `desk agent "Where is order MS-10388?" --fail-tool get_order` | `get_order` failed twice (`tool_failed`, retried once), then: *"Retrying the same call won't change the result"*, with a suggestion to give the customer name so `list_orders` can be used | ✅ Failure fed back as data; sensible single retry; a 3rd identical call would have been stopped by the detector |
+| `python -m unittest -v` | `Ran 208 tests … OK` | ✅ |
+
+---
+
+### 4. Stretch: Plan First (`--plan`, the `todo` tool)
+| Apex run | Steps | Tool calls | Tokens | Time |
+| :--- | :--- | :--- | :--- | :--- |
+| No plan (first run) | 5 | 42 | 60,569 | 54.0 s |
+| No plan (second run) | 6 | 35 | 59,882 | 44.8 s |
+| `--plan` | 6 (1 is the `todo` call) | 35 | 57,337 | 42.8 s |
+
+* **Result:** all three runs produced the same 8 correct drafts.
+* **Plan vs no plan:** planning spent one extra step writing the checklist, and the work after it took 5 steps. The difference between plan and no-plan is no bigger than the run-to-run difference without a plan (5 vs 6 steps, 42 vs 35 calls).
+* **Takeaway:** for a task with an obvious structure, a strong model already plans internally and batches its calls in parallel. An explicit plan pays off mainly as **observability** (the checklist is in the trace) and on longer, less obvious tasks. On this task it neither helped nor hurt measurably.
+
+---
+
+### 5. "Break it" Experiment Results (Setting Up Challenge 8: MCP)
+
+#### Experiment 1: "A teammate wants your order tools inside their IDE assistant"
+* **Setup:** list what sharing would take today.
+* **What Happened:** there is no standard way. They would need `desk/tools.py` (566 lines: schemas, validator, handlers, data paths) **plus** our provider adapters in `desk/llm.py` (~90 lines: OpenAI-style → Anthropic `tool_use` mapping and the Azure Responses mapping), our `.env` layout, the `orders.db` path and the Chroma index. The options:
+
+  | Option | Problem |
+  | :--- | :--- |
+  | Copy the code | Two copies that drift apart |
+  | Shell out to `desk tools` | Parses prose; can't call one tool directly |
+  | Wrap it as an HTTP API | They still write a client and re-declare every schema in *their* assistant's tool format |
+
+* **Root Cause / Takeaway:** our tools are locked into our loop. Even inside Desk, the same tools needed one adapter per model provider.
+
+#### Experiment 2: Add a third-party capability and count the custom glue
+* **Setup:**
+  * Built a shipping-carrier tool by hand, `track_shipment(awb)`, from the stub manifest `mcp/fake_servers/carrier_tracking.json`, on a snapshot of the working tree.
+  * Measured the diff, saved it as a patch, then restored the tree.
+* **Before the glue** (run on branch `breakit-ch07-carrier`, which had no carrier code):
+  * `desk agent "Where is order MS-10422? Track the shipment with the carrier too."` answered from `get_order` only: *"I can't track the shipment with the carrier. None of my tools connect to Delhivery or any other carrier's tracking system."*
+  * `git diff --stat main` on that branch showed only the uncommitted Ch7 work (8 files, +252 / −7, plus the new `desk/agent.py` and `tests/test_ch07.py`). That's the size of adding the loop itself.
+* **After the glue:** the same question ran `get_order` → `track_shipment("DL566614170")` → answer in 3 steps (13,295 tokens), with Delhivery scan events and ETA.
+  * The agent also noticed that the hand-made stub data was inconsistent: the last scan said "destination hub" in Ahmedabad for a Bengaluru customer. Canned test data needs the same care as real data.
+* **Glue counted for ONE read-only endpoint (1 of the carrier's 4 tools):**
+
+| Piece | Lines |
+| :--- | :--- |
+| `desk/carrier.py`: config + API key, HTTP call, carrier JSON shape → ours, HTTP 401/403/404/429/5xx + network errors → structured errors (incl. 12 lines of stub data) | 71 |
+| `desk/tools.py`: JSON schema + teammate-style description, handler, registration | 21 |
+| `desk/cli.py` (`--fail-tool` choice) + `.env.example` (`CARRIER_API_URL`, `CARRIER_API_KEY`) | 6 |
+| `tests/test_breakit_carrier.py` | 42 |
+| Ripple: existing Ch7 tests pinning the tool list and count broke and had to change | 2 |
+| **Total** | **~142 lines in 6 files, 0 lines of business logic** |
+
+* **Root Cause / Takeaway:** every line was protocol plumbing (auth, shapes, error codes, registration, tests), and it works **only inside Desk**. Slack and GitHub (`slack_stub.json`, `github_stub.json`) would each need the same again.
+
+#### Experiment 3: 5 agents × 10 systems
+* **What Happened:**
+  * Point to point, every agent needs its own glue for every system: **5 × 10 = 50 integrations**. At ~140 lines each that's **~7,000 lines**, and one carrier API change means 5 separate fixes.
+  * With a shared protocol, each system is wrapped once as a server and each agent implements one client: **5 + 10 = 15 pieces**.
+* **Root Cause / Takeaway:** the loop is the easy part (~100 lines). Integration grows as **M × N**. That motivates **Challenge 8, the Model Context Protocol (MCP)**: tools are published once as MCP servers and any MCP-capable agent can discover and call them, so the cost drops to **M + N**.
+
+---
+
+### 6. What fell short (→ Challenge 8)
+* Every new system (carrier, Slack, GitHub) means hand-written glue inside Desk, and nobody else can reuse our tools.
+* The tool list is hard-coded. The agent can't discover new capabilities at runtime.
+* The cost budget is not enforced until `DESK_PRICE_IN` / `DESK_PRICE_OUT` are set (the token budget is the active guard).
+* Each turn re-sends the whole history: the Apex run grew from 3.5k to 14k input tokens per turn (52.5k total). Longer tasks need context management (Challenge 9, memory).
+* Drafts need a human to review and send. There is no approval workflow yet (Challenges 10–11).

@@ -370,6 +370,73 @@ def cmd_eval_tools(args, client=None, sleep=None, retrieve=None):
     return 0
 
 
+AGENT_PRESETS = {"apex": "apex_task", "impossible": "impossible_task", "repeat": "repeat_trap"}
+
+
+def pricing(env=os.environ):
+    """(USD per 1M input tokens, per 1M output tokens) from DESK_PRICE_IN / DESK_PRICE_OUT, else None."""
+    try:
+        return float(env["DESK_PRICE_IN"]), float(env["DESK_PRICE_OUT"])
+    except (KeyError, ValueError):
+        return None
+
+
+def cmd_agent(args, client=None, sleep=None, retrieve=None, clock=None):
+    """Challenge 7: the agent loop - the model calls tools until it says it is finished or a limit stops it."""
+    import json
+
+    from . import agent, rag
+    from .llm import SimulatedError, make_client
+
+    task = (args.task or "").strip()
+    if args.preset:
+        path = data_dir() / "chat" / "c07_agent_tasks.json"
+        if not path.is_file():
+            print(f"error: {path} not found (set DESK_DATA_DIR)", file=sys.stderr)
+            return 1
+        task = json.loads(path.read_text(encoding="utf-8"))[AGENT_PRESETS[args.preset]]
+    if not task:
+        print("error: task is empty - try: desk agent \"Where is order MS-10388 and is it all in stock?\" "
+              "or desk agent --preset apex", file=sys.stderr)
+        return 2
+    model = pick_model(args, "AGENT")
+    toolbox, problem = make_toolbox(args, retrieve)
+    if problem:
+        print(f"error: {problem}", file=sys.stderr)
+        return 1
+    if os.getenv("DESK_OUTBOX"):
+        toolbox.outbox = Path(os.environ["DESK_OUTBOX"])
+    budget = agent.Budget(max_steps=args.max_steps, max_tokens=args.max_tokens, max_cost_usd=args.max_cost,
+                          wall_clock_s=args.timeout)
+    prices = pricing()
+    print(f"[agent] task: {task}", file=sys.stderr)
+
+    def show(event):
+        print(agent.format_event(event), file=sys.stderr, flush=True)
+        if args.show_results and event["event"] == "tool":
+            print(f"            {event['result_preview']}", file=sys.stderr)
+
+    try:
+        client = client if (client or args.simulate) else make_client(timeout=90.0, model=model)
+        run = agent.run_agent(task, model, client, toolbox, budget=budget, plan=args.plan, pricing=prices,
+                              sleep=sleep or time.sleep, log=lambda m: print(f"[retry] {m}", file=sys.stderr),
+                              on_event=show, simulate_error=SimulatedError(args.simulate) if args.simulate else None,
+                              **({"clock": clock} if clock else {}))
+    except LLMError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(rag.normalize_citations(run.answer) or "(the model returned no final text)", flush=True)
+    print("--")
+    print(f"stop: {run.stop_reason} | steps: {run.steps} | tool calls: {run.tool_calls} | LLM calls: {run.llm_calls}"
+          f" | model: {model}" + (" | plan-first" if args.plan else ""))
+    if run.drafts:
+        print(f"drafts saved (not sent): {len(run.drafts)} in {toolbox.outbox}")
+    if run.trace_file:
+        print(f"trace: {run.trace_file}")
+    print(footer(run).removeprefix("--\n"))
+    return 0 if run.finished else 3
+
+
 def build_parser():
     p = argparse.ArgumentParser(prog="desk", description="Desk - Meridian Supply Co. customer-operations assistant")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -409,6 +476,22 @@ def build_parser():
         s.add_argument("--model", help="overrides DESK_MODEL_TOOLS (set in .env)")
         s.add_argument("--vague", action="store_true",
                        help="stretch: give check_stock a deliberately vague description and watch tool choice degrade")
+    ag = sub.add_parser("agent", help="Challenge 7 agent loop: the model calls tools until it is finished or a "
+                                      "limit stops it (exit 3 = stopped early)")
+    ag.add_argument("task", nargs="?", help="what to do (or use --preset)")
+    ag.add_argument("--preset", choices=list(AGENT_PRESETS),
+                    help="a task from chat/c07_agent_tasks.json: apex, impossible or repeat")
+    ag.add_argument("--model", help="overrides DESK_MODEL_AGENT (set in .env)")
+    ag.add_argument("--plan", action="store_true", help="stretch: add the todo tool and make the agent plan first")
+    ag.add_argument("--max-steps", type=int, default=25, help="model turns before stopping (default 25)")
+    ag.add_argument("--max-tokens", type=int, default=500_000, help="input+output token budget (default 500000)")
+    ag.add_argument("--max-cost", type=float, default=0.50,
+                    help="USD budget (default 0.50; enforced only when DESK_PRICE_IN/OUT are set)")
+    ag.add_argument("--timeout", type=float, default=300.0, help="wall-clock seconds (default 300)")
+    ag.add_argument("--show-results", action="store_true", help="also print each tool result in the trace")
+    ag.add_argument("--fail-tool", action="append", choices=TOOL_NAMES + ["list_orders", "draft_email"], metavar="TOOL",
+                    help="make this tool crash, to see the agent cope with a failure (repeatable)")
+    ag.add_argument("--simulate", choices=["429", "timeout", "network"], help="force an LLM failure to test retries")
     return p
 
 
@@ -419,7 +502,7 @@ def main(argv=None):
     utf8_output()
     args = build_parser().parse_args(argv)
     sys.exit({"ask": cmd_ask, "chat": cmd_chat, "ingest": cmd_ingest, "eval-rag": cmd_eval_rag, "extract": cmd_extract,
-              "accuracy": cmd_accuracy, "tools": cmd_tools, "eval-tools": cmd_eval_tools}[args.cmd](args))
+              "accuracy": cmd_accuracy, "tools": cmd_tools, "eval-tools": cmd_eval_tools, "agent": cmd_agent}[args.cmd](args))
 
 
 if __name__ == "__main__":

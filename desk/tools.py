@@ -97,6 +97,66 @@ TOOLS = [
                       "description": "What to look for in the policies."}}}}},
 ]
 
+STATUSES = ["pending", "processing", "shipped", "delivered", "delayed", "cancelled", "refunded"]
+EMAIL = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+MAX_ORDERS = 50
+
+# Challenge 7: extra tools for the agent loop (desk agent). desk tools (Ch6) keeps the five above.
+AGENT_TOOLS = [
+    {"type": "function", "function": {
+        "name": "list_orders",
+        "description": (
+            "List ONE customer's orders from the live order database, newest first. Find the customer by any part "
+            "of the company name (case-insensitive, e.g. 'Apex') or by customer id (e.g. CUST-0001). Optional "
+            "filters: status, and min_days_late (only orders at least this many days past the promised date; "
+            "days_late counts to the delivery date, or to today if not delivered). Each order has order_id, status, "
+            "order/promised/delivered dates, days_late, total_inr and its lines (sku, quantity, unit). The customer "
+            "block includes the contact name and email address. Use it when the user names a customer instead of "
+            "an order id; use get_order for full details of one order. At most 50 orders are returned ('truncated' "
+            "says if more matched). Errors: customer_not_found, ambiguous_customer (lists the candidates)."),
+        "parameters": {"type": "object", "additionalProperties": False, "required": ["customer"], "properties": {
+            "customer": {"type": "string", "minLength": 2, "maxLength": 100,
+                         "description": "Company name or part of it, or a customer id like CUST-0001."},
+            "status": {"type": "string", "enum": STATUSES, "description": "Only orders with this status."},
+            "min_days_late": {"type": "integer", "minimum": 0,
+                              "description": "Only orders at least this many days late, e.g. 6 for 'more than 5 days'."}}}}},
+    {"type": "function", "function": {
+        "name": "draft_email",
+        "description": (
+            "Save an email DRAFT to the outbox folder for a Meridian staff member to review and send. It does NOT "
+            "send anything and nobody receives it until a person does. Returns the saved file path. Use one call per "
+            "message. Write the complete email: greeting, the facts (order ids, dates, amounts from tool results), "
+            "any policy clause quoted with its id, and a sign-off from 'Meridian Supply Co. Customer Operations'. "
+            "Never tell the user an email was sent - say it was drafted."),
+        "parameters": {"type": "object", "additionalProperties": False, "required": ["to", "subject", "body"],
+                       "properties": {
+                           "to": {"type": "string", "pattern": EMAIL, "maxLength": 200,
+                                  "description": "Recipient email address, e.g. the customer's email from list_orders."},
+                           "subject": {"type": "string", "minLength": 1, "maxLength": 200, "description": "Subject line."},
+                           "body": {"type": "string", "minLength": 1, "maxLength": 8000,
+                                    "description": "Plain-text email body."}}}}},
+]
+
+# Stretch (desk agent --plan): a checklist the agent writes before it starts.
+TODO_TOOL = {"type": "function", "function": {
+    "name": "todo",
+    "description": (
+        "Record your plan as a short checklist. Call it FIRST, before any other tool, with every step 'pending'; "
+        "then call it again with the full list whenever steps change status ('in_progress', 'done'). It only "
+        "records the plan and returns it - it does not do any of the work."),
+    "parameters": {"type": "object", "additionalProperties": False, "required": ["items"], "properties": {
+        "items": {"type": "array", "minItems": 1, "maxItems": 20, "description": "The whole plan, in order.",
+                  "items": {"type": "object", "additionalProperties": False, "required": ["step", "status"],
+                            "properties": {
+                                "step": {"type": "string", "minLength": 1, "maxLength": 200},
+                                "status": {"type": "string", "enum": ["pending", "in_progress", "done"]}}}}}}}}
+
+
+def agent_tool_specs(plan=False):
+    """Tools for desk agent: the five Ch6 tools + list_orders + draft_email (+ todo with --plan)."""
+    return json.loads(json.dumps(TOOLS + AGENT_TOOLS + ([TODO_TOOL] if plan else [])))
+
+
 # Stretch: one deliberately vague description, to watch tool selection degrade (desk tools --vague).
 VAGUE = {"check_stock": {"description": "Gets product data.", "sku": "an id"}}
 
@@ -113,7 +173,7 @@ def tool_specs(vague=False):
     return specs
 
 
-SCHEMAS = {t["function"]["name"]: t["function"]["parameters"] for t in TOOLS}
+SCHEMAS = {t["function"]["name"]: t["function"]["parameters"] for t in TOOLS + AGENT_TOOLS + [TODO_TOOL]}
 
 
 class ToolError(Exception):
@@ -126,7 +186,7 @@ class ToolError(Exception):
 
 # ---- argument validation (the subset of JSON Schema the tools use) ---------
 
-_TYPES = {"object": dict, "string": str, "integer": int, "number": (int, float), "boolean": bool}
+_TYPES = {"object": dict, "string": str, "integer": int, "number": (int, float), "boolean": bool, "array": list}
 
 
 def validate(schema, value, path="arguments"):
@@ -156,6 +216,14 @@ def validate(schema, value, path="arguments"):
             problems.append(f"{path} is longer than {schema['maxLength']} characters")
         if "pattern" in schema and not re.fullmatch(schema["pattern"], value):
             problems.append(f"{path} {value[:60]!r} does not match the format {schema['pattern']}")
+    if kind == "array":
+        if len(value) < schema.get("minItems", 0):
+            problems.append(f"{path} needs at least {schema['minItems']} item(s)")
+        if len(value) > schema.get("maxItems", math.inf):
+            problems.append(f"{path} has more than {schema['maxItems']} items")
+        if "items" in schema:
+            for i, item in enumerate(value):
+                problems += validate(schema["items"], item, f"{path}[{i}]")
     if kind in ("integer", "number"):
         if value < schema.get("minimum", -math.inf):
             problems.append(f"{path} must be at least {schema['minimum']}")
@@ -250,13 +318,16 @@ def _words(text):
 class Toolbox:
     """Runs the tools. `retrieve(query) -> [rag.Hit]` backs search_policies (default: the Ch5 pipeline over .chroma)."""
 
-    def __init__(self, db_path, catalog_path, retrieve=None, fail=None):
+    def __init__(self, db_path, catalog_path, retrieve=None, fail=None, outbox=None):
         self.db_path, self.catalog_path = Path(db_path), Path(catalog_path)
+        self.outbox = Path(outbox) if outbox else self.db_path.parent / "outbox"  # draft_email writes only here
         self._retrieve, self._catalog, self._today = retrieve, None, None
         self.fail = set(fail or [])  # tool names forced to crash (desk tools --fail-tool), to test error handling
+        self.plan, self.drafts = [], []  # todo checklist and saved draft paths, for this run
         self.handlers = {"get_order": self.get_order, "search_catalog": self.search_catalog,
                          "check_stock": self.check_stock, "calculate": self.calculate,
-                         "search_policies": self.search_policies}
+                         "search_policies": self.search_policies, "list_orders": self.list_orders,
+                         "draft_email": self.draft_email, "todo": self.todo}
 
     def run(self, name, raw_args):
         """Validate + execute one tool call. Never raises: returns {"ok": ..., "result" | "error": ...}."""
@@ -332,6 +403,40 @@ class Toolbox:
                        "line_total_inr": round(l["quantity"] * l["unit_price_charged"], 2)} for l in lines],
         }
 
+    def list_orders(self, customer, status=None, min_days_late=None):
+        con = self._connect()
+        try:
+            key = customer.strip()
+            found = con.execute("SELECT id, name, contact_name, email, tier, city FROM customers WHERE id = ? COLLATE NOCASE "
+                                "OR name LIKE ? ORDER BY id", (key, f"%{key}%")).fetchall()
+            if not found:
+                raise ToolError("customer_not_found", f"no customer matches {customer!r}")
+            if len(found) > 1:
+                names = ", ".join(f"{c['name']} ({c['id']})" for c in found[:10])
+                raise ToolError("ambiguous_customer", f"{len(found)} customers match {customer!r}: {names} - "
+                                                      "call again with the customer id")
+            cust = dict(found[0])
+            orders = [dict(o) for o in con.execute("SELECT * FROM orders WHERE customer_id = ? ORDER BY order_date DESC, id DESC",
+                                                   (cust["id"],))]
+            lines = {}
+            for l in con.execute("SELECT order_id, sku, quantity, unit FROM order_lines WHERE order_id IN "
+                                 "(SELECT id FROM orders WHERE customer_id = ?) ORDER BY id", (cust["id"],)):
+                lines.setdefault(l["order_id"], []).append({"sku": l["sku"], "quantity": l["quantity"], "unit": l["unit"]})
+        finally:
+            con.close()
+        out = []
+        for o in orders:
+            late = self._days_late(o)
+            if status and o["status"] != status:
+                continue
+            if min_days_late is not None and (late is None or late < min_days_late):
+                continue
+            out.append({"order_id": o["id"], "status": o["status"], "order_date": o["order_date"],
+                        "promised_date": o["promised_date"], "delivered_date": o["delivered_date"], "days_late": late,
+                        "total_inr": o["total"], "lines": lines.get(o["id"], [])})
+        return {"customer": cust, "data_as_of": self.today(), "count": len(out[:MAX_ORDERS]),
+                "truncated": len(out) > MAX_ORDERS, "orders": out[:MAX_ORDERS]}
+
     def _days_late(self, o):
         if o["status"] in ("cancelled", "refunded") or not o["promised_date"]:
             return None
@@ -393,6 +498,27 @@ class Toolbox:
                 return {"sku": sku, "name": p["name"], "stock": p["stock"], "unit": p["unit"],
                         "in_stock": p["stock"] > 0}
         raise ToolError("sku_not_found", f"no product with SKU {sku} in the catalog")
+
+    # -- drafts (the only tool that writes, and only into the outbox folder) --
+
+    def draft_email(self, to, subject, body):
+        self.outbox.mkdir(parents=True, exist_ok=True)
+        slug = re.sub(r"[^a-z0-9]+", "-", subject.lower()).strip("-")[:50] or "draft"
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        n = len(list(self.outbox.glob("*.txt"))) + 1
+        path = self.outbox / f"{stamp}_{n:03d}_{slug}.txt"
+        text = (f"To: {to}\nSubject: {subject}\nStatus: DRAFT - NOT SENT (saved by Desk for staff review)\n"
+                f"Saved: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n{body.strip()}\n")
+        path.write_text(text, encoding="utf-8")
+        self.drafts.append(str(path))
+        return {"saved": str(path), "sent": False, "to": to, "subject": subject, "body_chars": len(body)}
+
+    # -- todo (stretch) --
+
+    def todo(self, items):
+        self.plan = items
+        done = sum(i["status"] == "done" for i in items)
+        return {"plan": items, "done": done, "total": len(items)}
 
     # -- calculator --
 

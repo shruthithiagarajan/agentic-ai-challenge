@@ -62,6 +62,7 @@ ROLES = {
     "REWRITE": "Ch5 follow-up query rewriting",
     "JUDGE": "Ch5 eval-rag faithfulness judge",
     "TOOLS": "Ch6 desk tools / eval-tools (tool calling)",
+    "AGENT": "Ch7 desk agent (the agent loop)",
 }
 
 
