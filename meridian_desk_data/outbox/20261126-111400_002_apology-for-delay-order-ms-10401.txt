@@ -1,0 +1,17 @@
+To: deshmukh@apex.example
+Subject: Apology for delay – Order MS-10401
+Status: DRAFT - NOT SENT (saved by Desk for staff review)
+Saved: 2026-11-26 11:14:00
+
+Dear Rahul Deshmukh,
+
+We sincerely apologise that order MS-10401 (promised 2026-09-28) has not yet been delivered; it is currently 7 days late.
+
+Stock status: unfortunately both items are currently out of stock – Cast Iron Gate Valve DN80 Flanged x4 (MS-VLV0300) and Spiral Wound Gasket DN80 PN16 x10 (MS-GSK0101). 
+
+Under our policy [shipping_delays.md#3], a delay of 6 to 10 days earns a written apology and a credit of 3% of the order value. On the order value of INR 29,800, the credit is INR 894, applied to your next invoice and not paid in cash. Additionally, where a delay is caused by an out-of-stock item and the backorder will take more than 7 days, you may cancel the affected lines without penalty [shipping_delays.md#4].
+
+[Staff: please insert the new expected delivery date and the reason for the delay, as required by shipping_delays.md#2, and the backorder duration.]
+
+Regards,
+Meridian Supply Co. Customer Operations

@@ -1,0 +1,17 @@
+To: deshmukh@apex.example
+Subject: Apology for delay – Order MS-10452
+Status: DRAFT - NOT SENT (saved by Desk for staff review)
+Saved: 2026-11-26 11:14:00
+
+Dear Rahul Deshmukh,
+
+We sincerely apologise that order MS-10452 (promised 2026-09-18) has not yet been delivered; it is currently 17 days late.
+
+Stock status: all items are currently in stock – 3-Phase Induction Motor 7.5 kW 1440 rpm x3 (MS-ELC0410, 14 in stock) and Contactor 32A 3-Pole 230V Coil x6 (MS-ELC0420).
+
+Under our policy [shipping_delays.md#3], a delay of 11 to 20 days earns a written apology, a credit of 5% of the order value and expedited freight on the replacement shipment. On the order value of INR 136,200, the credit is INR 6,810, applied to your next invoice and not paid in cash. The shipment will go by expedited freight.
+
+[Staff: please insert the new expected delivery date and the reason for the delay, as required by shipping_delays.md#2.]
+
+Regards,
+Meridian Supply Co. Customer Operations

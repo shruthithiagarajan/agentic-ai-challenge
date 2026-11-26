@@ -1,0 +1,17 @@
+To: deshmukh@apex.example
+Subject: Apology for delay – Order MS-10388
+Status: DRAFT - NOT SENT (saved by Desk for staff review)
+Saved: 2026-11-26 11:14:00
+
+Dear Rahul Deshmukh,
+
+We sincerely apologise that order MS-10388 (promised 2026-09-29) has not yet been delivered; it is currently 6 days late.
+
+Stock status: all items on the order are currently in stock – Brass Ball Valve 2" BSP x20 (MS-VLV0200) and Brass Elbow 90deg 1" BSP x40 (MS-FIT0110).
+
+Under our policy [shipping_delays.md#3], a delay of 6 to 10 days earns a written apology and a credit of 3% of the order value. On the order value of INR 44,900, the credit is INR 1,347. As per [shipping_delays.md#3], credits are applied to your next invoice and are not paid in cash.
+
+[Staff: please insert the new expected delivery date and the reason for the delay, as required by shipping_delays.md#2.]
+
+Regards,
+Meridian Supply Co. Customer Operations

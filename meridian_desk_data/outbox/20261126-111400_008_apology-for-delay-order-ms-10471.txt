@@ -1,0 +1,17 @@
+To: deshmukh@apex.example
+Subject: Apology for delay – Order MS-10471
+Status: DRAFT - NOT SENT (saved by Desk for staff review)
+Saved: 2026-11-26 11:14:00
+
+Dear Rahul Deshmukh,
+
+We sincerely apologise that order MS-10471 (promised 2026-09-09) has not yet been delivered; it is currently 26 days late.
+
+Stock status: Torque Wrench 40-200 Nm 1/2 in drive x2 (MS-TLS0110) is in stock. Spiral Wound Gasket DN80 PN16 x20 (MS-GSK0101) is currently out of stock.
+
+Under our policy [shipping_delays.md#3], a delay of more than 20 days earns a written apology, a credit of 8% of the order value and the right to cancel the order without charge. On the order value of INR 26,000, the credit is INR 2,080, applied to your next invoice and not paid in cash. You may cancel this order without charge if you wish. Separately, for out-of-stock items with a backorder of more than 7 days, the affected lines may be cancelled without penalty [shipping_delays.md#4].
+
+[Staff: please insert the new expected delivery date and the reason for the delay, as required by shipping_delays.md#2.]
+
+Regards,
+Meridian Supply Co. Customer Operations

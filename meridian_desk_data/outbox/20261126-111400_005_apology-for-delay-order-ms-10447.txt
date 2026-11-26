@@ -1,0 +1,17 @@
+To: deshmukh@apex.example
+Subject: Apology for delay – Order MS-10447
+Status: DRAFT - NOT SENT (saved by Desk for staff review)
+Saved: 2026-11-26 11:14:00
+
+Dear Rahul Deshmukh,
+
+We sincerely apologise that order MS-10447 (promised 2026-09-21) has not yet been delivered; it is currently 14 days late.
+
+Stock status: all items are currently in stock – Hex Bolt M12x60 Zinc Plated Gr 8.8 x15 boxes (MS-FAS0105) and Hex Nut M12 Zinc Plated x15 boxes (MS-FAS0110).
+
+Under our policy [shipping_delays.md#3], a delay of 11 to 20 days earns a written apology, a credit of 5% of the order value and expedited freight on the replacement shipment. On the order value of INR 31,050, the credit is INR 1,552.50, applied to your next invoice and not paid in cash. The shipment will go by expedited freight.
+
+[Staff: please insert the new expected delivery date and the reason for the delay, as required by shipping_delays.md#2.]
+
+Regards,
+Meridian Supply Co. Customer Operations
