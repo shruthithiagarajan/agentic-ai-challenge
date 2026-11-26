@@ -381,8 +381,40 @@ def pricing(env=os.environ):
         return None
 
 
-def cmd_agent(args, client=None, sleep=None, retrieve=None, clock=None):
-    """Challenge 7: the agent loop - the model calls tools until it says it is finished or a limit stops it."""
+def _prompt_args(pairs):
+    out = {}
+    for pair in pairs or []:
+        key, sep, value = pair.partition("=")
+        if not sep or not key.strip():
+            raise ValueError(f"--arg must look like name=value, got {pair!r}")
+        out[key.strip()] = value
+    return out
+
+
+def open_toolbox(args, retrieve=None, mcp_factory=None):
+    """(context manager giving the agent's toolbox, error message). Ch8 default: MCP servers from the config file;
+    --local: the Ch7 in-process Toolbox."""
+    import contextlib
+
+    if getattr(args, "local", False):
+        toolbox, problem = make_toolbox(args, retrieve)
+        if toolbox is not None and os.getenv("DESK_OUTBOX"):
+            toolbox.outbox = Path(os.environ["DESK_OUTBOX"])
+        return (contextlib.nullcontext(toolbox) if toolbox else None), problem
+    from .mcp_client import MCPConfigError, MCPToolbox, load_config
+
+    try:
+        configs = load_config(args.servers, args.only)
+    except MCPConfigError as e:
+        return None, f"{e} (or run with --local for the Challenge 7 in-process tools)"
+    if not configs:
+        return None, f"no enabled servers in {args.servers} - enable one or pick servers with --only NAME"
+    return MCPToolbox(configs, plan=getattr(args, "plan", False), client_factory=mcp_factory,
+                      log=lambda m: print(m, file=sys.stderr)), None
+
+
+def cmd_agent(args, client=None, sleep=None, retrieve=None, clock=None, mcp_factory=None):
+    """Challenge 7 loop; Challenge 8: its tools come from MCP servers (mcp_servers.json) unless --local."""
     import json
 
     from . import agent, rag
@@ -395,46 +427,108 @@ def cmd_agent(args, client=None, sleep=None, retrieve=None, clock=None):
             print(f"error: {path} not found (set DESK_DATA_DIR)", file=sys.stderr)
             return 1
         task = json.loads(path.read_text(encoding="utf-8"))[AGENT_PRESETS[args.preset]]
-    if not task:
-        print("error: task is empty - try: desk agent \"Where is order MS-10388 and is it all in stock?\" "
-              "or desk agent --preset apex", file=sys.stderr)
+    if not task and not args.prompt:
+        print("error: task is empty - try: desk agent \"Where is order MS-10388 and is it all in stock?\", "
+              "desk agent --preset apex or desk agent --prompt delay-apology --arg order_id=MS-10388", file=sys.stderr)
+        return 2
+    try:
+        prompt_args = _prompt_args(args.arg)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
         return 2
     model = pick_model(args, "AGENT")
-    toolbox, problem = make_toolbox(args, retrieve)
+    opened, problem = open_toolbox(args, retrieve, mcp_factory)
     if problem:
         print(f"error: {problem}", file=sys.stderr)
         return 1
-    if os.getenv("DESK_OUTBOX"):
-        toolbox.outbox = Path(os.environ["DESK_OUTBOX"])
     budget = agent.Budget(max_steps=args.max_steps, max_tokens=args.max_tokens, max_cost_usd=args.max_cost,
                           wall_clock_s=args.timeout)
     prices = pricing()
-    print(f"[agent] task: {task}", file=sys.stderr)
 
     def show(event):
         print(agent.format_event(event), file=sys.stderr, flush=True)
         if args.show_results and event["event"] == "tool":
             print(f"            {event['result_preview']}", file=sys.stderr)
 
-    try:
-        client = client if (client or args.simulate) else make_client(timeout=90.0, model=model)
-        run = agent.run_agent(task, model, client, toolbox, budget=budget, plan=args.plan, pricing=prices,
-                              sleep=sleep or time.sleep, log=lambda m: print(f"[retry] {m}", file=sys.stderr),
-                              on_event=show, simulate_error=SimulatedError(args.simulate) if args.simulate else None,
-                              **({"clock": clock} if clock else {}))
-    except LLMError as e:
-        print(f"error: {e}", file=sys.stderr)
-        return 1
+    with opened as toolbox:
+        if not args.local:
+            for line in toolbox.summary():
+                print(f"[mcp] {line}", file=sys.stderr)
+            if not toolbox.servers:
+                print("error: no MCP server could be reached - see the [mcp] lines above", file=sys.stderr)
+                return 1
+            print(f"[mcp] {len(toolbox.routes)} tools discovered | tool definitions ~{toolbox.definition_tokens():,} "
+                  "tokens on every model call", file=sys.stderr)
+        if args.prompt:
+            if args.local:
+                print("error: --prompt needs MCP servers (drop --local)", file=sys.stderr)
+                return 2
+            try:
+                task = toolbox.get_prompt(args.prompt, prompt_args)
+            except Exception as e:  # noqa: BLE001 - unknown prompt / missing argument
+                print(f"error: prompt {args.prompt!r}: {e}", file=sys.stderr)
+                return 1
+        print(f"[agent] task: {task}", file=sys.stderr)
+        try:
+            client = client if (client or args.simulate) else make_client(timeout=90.0, model=model)
+            run = agent.run_agent(task, model, client, toolbox, budget=budget, plan=args.plan, pricing=prices,
+                                  sleep=sleep or time.sleep, log=lambda m: print(f"[retry] {m}", file=sys.stderr),
+                                  on_event=show, simulate_error=SimulatedError(args.simulate) if args.simulate else None,
+                                  **({"clock": clock} if clock else {}))
+        except LLMError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
     print(rag.normalize_citations(run.answer) or "(the model returned no final text)", flush=True)
     print("--")
     print(f"stop: {run.stop_reason} | steps: {run.steps} | tool calls: {run.tool_calls} | LLM calls: {run.llm_calls}"
-          f" | model: {model}" + (" | plan-first" if args.plan else ""))
+          f" | model: {model} | tools: {'local (Ch7)' if args.local else 'MCP'}" + (" | plan-first" if args.plan else ""))
     if run.drafts:
-        print(f"drafts saved (not sent): {len(run.drafts)} in {toolbox.outbox}")
+        where = toolbox.outbox if args.local else Path(run.drafts[0]).parent
+        print(f"drafts saved (not sent): {len(run.drafts)} in {where}")
     if run.trace_file:
         print(f"trace: {run.trace_file}")
     print(footer(run).removeprefix("--\n"))
     return 0 if run.finished else 3
+
+
+def cmd_mcp(args, mcp_factory=None):
+    """desk mcp list | call: inspect MCP servers and call one tool by hand (no LLM)."""
+    import json
+
+    args.local, args.plan = False, False
+    opened, problem = open_toolbox(args, mcp_factory=mcp_factory)
+    if problem:
+        print(f"error: {problem}", file=sys.stderr)
+        return 1
+    with opened as toolbox:
+        if args.action == "list":
+            for name, server in toolbox.servers.items():
+                print(f"== {name} ({server['transport']})" + (f" - {server['instructions'][:110]}..."
+                                                              if server["instructions"] else ""))
+                for t in server["tools"]:
+                    a = t.annotations
+                    hints = [h for h, on in (("read-only", a and a.read_only_hint), ("destructive", a and a.destructive_hint),
+                                             ("idempotent", a and a.idempotent_hint)) if on]
+                    print(f"   tool     {t.name}" + (f"  [{', '.join(hints)}]" if hints else ""))
+                for r in server["resources"]:
+                    print(f"   resource {r.uri}  {r.title or r.name}")
+                for pr in server["prompts"]:
+                    print(f"   prompt   {pr.name}({', '.join(x.name for x in pr.arguments or [])})")
+            for name, why in toolbox.failed.items():
+                print(f"== {name}: NOT CONNECTED - {why}")
+            print(f"total: {len(toolbox.routes)} tools from {len(toolbox.servers)} server(s); tool definitions "
+                  f"~{toolbox.definition_tokens():,} tokens sent before the user has typed anything")
+            return 0 if toolbox.servers else 1
+        if not toolbox.servers:
+            print("error: no MCP server could be reached", file=sys.stderr)
+            return 1
+        if not args.tool:
+            print("error: desk mcp call needs a tool name, e.g. desk mcp call check_stock '{\"sku\": \"MS-VLV0200\"}'",
+                  file=sys.stderr)
+            return 2
+        result = toolbox.run(args.tool, args.arguments or "{}")
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if result["ok"] else 1
 
 
 def build_parser():
@@ -492,6 +586,18 @@ def build_parser():
     ag.add_argument("--fail-tool", action="append", choices=TOOL_NAMES + ["list_orders", "draft_email"], metavar="TOOL",
                     help="make this tool crash, to see the agent cope with a failure (repeatable)")
     ag.add_argument("--simulate", choices=["429", "timeout", "network"], help="force an LLM failure to test retries")
+    ag.add_argument("--local", action="store_true",
+                    help="Challenge 7 mode: in-process tools instead of MCP servers (needed for --fail-tool)")
+    ag.add_argument("--prompt", help="use a server prompt as the task, e.g. delay-apology (with --arg name=value)")
+    ag.add_argument("--arg", action="append", metavar="NAME=VALUE", help="argument for --prompt (repeatable)")
+    mc = sub.add_parser("mcp", help="Challenge 8: list the tools/resources/prompts of the MCP servers, or call one tool")
+    mc.add_argument("action", choices=["list", "call"])
+    mc.add_argument("tool", nargs="?", help="tool to call (desk mcp call TOOL '{json}')")
+    mc.add_argument("arguments", nargs="?", help="JSON arguments for the tool")
+    for s in (ag, mc):
+        s.add_argument("--servers", default="mcp_servers.json", help="MCP server config file (default mcp_servers.json)")
+        s.add_argument("--only", action="append", metavar="NAME",
+                       help="connect only to this server from the config, even if disabled (repeatable)")
     return p
 
 
@@ -502,7 +608,8 @@ def main(argv=None):
     utf8_output()
     args = build_parser().parse_args(argv)
     sys.exit({"ask": cmd_ask, "chat": cmd_chat, "ingest": cmd_ingest, "eval-rag": cmd_eval_rag, "extract": cmd_extract,
-              "accuracy": cmd_accuracy, "tools": cmd_tools, "eval-tools": cmd_eval_tools, "agent": cmd_agent}[args.cmd](args))
+              "accuracy": cmd_accuracy, "tools": cmd_tools, "eval-tools": cmd_eval_tools, "agent": cmd_agent,
+              "mcp": cmd_mcp}[args.cmd](args))
 
 
 if __name__ == "__main__":

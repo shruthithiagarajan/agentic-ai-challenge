@@ -595,3 +595,203 @@ bye
 * The cost budget is not enforced until `DESK_PRICE_IN` / `DESK_PRICE_OUT` are set (the token budget is the active guard).
 * Each turn re-sends the whole history: the Apex run grew from 3.5k to 14k input tokens per turn (52.5k total). Longer tasks need context management (Challenge 9, memory).
 * Drafts need a human to review and send. There is no approval workflow yet (Challenges 10–11).
+
+---
+
+## Challenge 8: MCP (`ch08`)
+**Server:** `meridian-ops` (`meridian_ops/`, Python `mcp` SDK 2.3.0) · **Client:** Desk's agent (`desk/mcp_client.py`), model `claude-sonnet-5-5` · **Protocol:** 2026-07-28 (stateless) for Desk; older clients such as Inspector still connect on 2025-11-25 · **Config:** `mcp_servers.json` (Desk), `.mcp.json` (Claude Code)
+
+### 1. Why We Built This: Ch7 vs. Ch8
+
+| | Challenge 7: Agent loop | Challenge 8: MCP |
+| :--- | :--- | :--- |
+| **Where the tools live** | Inside Desk (`desk/tools.py`, hard-coded list in the loop) | In a separate **MCP server**, `meridian-ops`; the business logic stays in `desk/tools.py`, the server publishes it |
+| **How the agent gets its tools** | Imported at code level | **Discovered at runtime**: it reads `mcp_servers.json`, connects to each server and asks `tools/list` |
+| **Who else can use the tools** | Nobody | Any MCP client: Desk's agent, `desk mcp`, MCP Inspector, Claude Code (all verified) |
+| **What the server offers** | 7 tools | **11 tools + 14 resources** (the policy docs as `policy://…`) **+ 1 prompt** (`delay-apology`) |
+| **Transports** | In-process function calls | **stdio** (the client starts the server) and **Streamable HTTP** (a long-running server on port 8080, stateless) |
+| **Security** | None (trusted in-process code) | Bearer tokens on HTTP: missing / invalid / expired token gives **401**; a token without a tool's scope gives **403 `insufficient_scope`** |
+| **Writes** | Email drafts only | Drafts **+ `cancel_order` and `create_refund`** (idempotency key), applied to a **working copy** of the database (`data/meridian_ops/orders.db`), never the seed |
+| **Adding a third-party system** | Carrier tracking by hand: **~142 lines** of glue in 6 files, usable only by Desk | Official filesystem server: **one config entry, 0 lines of code** |
+| **The same Apex task** | 5–6 steps, 35–42 tool calls, all 8 credits correct | **5 steps, 34 tool calls, all 8 credits correct**, with every tool over MCP |
+| **Cost of the tool list** | 7 tool definitions (step 1: 3,536 input tokens) | 11 definitions (~2,600 tokens; step 1: 4,654 input tokens), and it grows with every server connected |
+
+**One server, four clients (all live-verified):**
+
+| Client | Who decides what to call | Result |
+| :--- | :--- | :--- |
+| `desk agent` (Claude + the Ch7 loop) | The model | Apex task completed over MCP |
+| `desk mcp list` / `desk mcp call` (terminal) | You, typed | Every tool, the auth cases, the refund idempotency |
+| MCP Inspector (browser) | You, by clicking | Tools, resources, prompt, errors, a load test |
+| Claude Code (IDE assistant) | Claude Code's own model | `check_stock` + `get_order`, and a delay apology drafted with no Desk code involved |
+
+---
+
+### 2. What Was Built
+* **`meridian_ops/server.py`: the MCP server.**
+  * **Tools.** Each of the 11 Desk tools is registered with **Desk's hand-written JSON schema and description** (not a derived one), so every client sees the same "docs for a new teammate".
+  * **Annotations:** read-only, destructive (`cancel_order`), idempotent (`cancel_order`, `create_refund`).
+  * **Structured output:** results come back as JSON objects.
+  * **Errors:** they return as `isError` results carrying Desk's `{code, message}`.
+  * **Resources:** one per policy file.
+  * **Prompt:** `delay-apology(order_id, customer_tone)`, from `delay_apology_prompt.json`.
+  * **`--log-level`:** controls stderr detail (default WARNING).
+* **`meridian_ops/auth.py`: two layers on HTTP.**
+  1. The SDK's bearer middleware with a token verifier over `auth_tokens.json` (fake tokens) returns **401**.
+  2. `ScopeGate` reads each `tools/call` and returns **403** when the token lacks the tool's scope (`tool_scope_map.json`). Each tool checks the scope again itself. Over stdio there is no token: it's the local user.
+* **`meridian_ops/__main__.py`:** `python -m meridian_ops` (stdio) or `--http --port 8080` (stateless Streamable HTTP, JSON responses).
+* **`desk/mcp_client.py`: `MCPToolbox`, the agent's side.**
+  * Connects to every enabled server in `mcp_servers.json`, over stdio or HTTP (with the token from `MERIDIAN_TOKEN`).
+  * Discovers tools, resources and prompts, and routes each call to the server that owns it.
+  * Prefixes names when two servers clash (`a__get_order`) and skips a dead server.
+  * Turns HTTP 401 / 403 into structured errors the model can read.
+  * The async MCP clients run on a background event loop, so the Ch7 loop stays synchronous and unchanged.
+* **`desk/agent.py`:** it no longer imports or defines any tools. It asks the toolbox `specs()`, and adds each server's instructions to the system prompt (that's where "data is as of 2026-10-05" comes from).
+* **CLI:**
+  * `desk agent` uses MCP by default: `--servers`, `--only NAME`, `--prompt delay-apology --arg order_id=…`; `--local` gives the Ch7 tools.
+  * `desk mcp list` / `desk mcp call TOOL '{json}'` talk MCP with no LLM.
+* **`meridian_ops/stub.py`:** turns a stub manifest (`fake_servers/*.json`) into a working MCP server with canned answers.
+* **`meridian_ops/lb.py`:** the round-robin load balancer (stretch).
+* **Unit Tests (`python -m unittest -v`):** Passed: **227/227** (19 new in `tests/test_ch08.py`). They cover:
+  * in-process MCP servers: schemas, annotations, errors, writes on the copy only, idempotency, resources, prompt, the tool-level scope check, the stub server, log level;
+  * the token table and `ScopeGate`;
+  * **one real HTTP server** on a spare port: 401 ×3, 403, and the read-write token;
+  * the client: discovery, routing, name clashes, a dead server, the plan tool, config loading;
+  * the agent loop running on discovered tools, plus a check that `agent.py` holds no tool definitions;
+  * the CLI and the load balancer.
+
+---
+
+### 3. Build & Acceptance Verification ("Done when")
+
+#### ✅ The agent contains zero hard-coded business tools
+* **Code:** `desk/agent.py` has no `from .tools` import and no tool list. A unit test fails if one is added.
+* **Command Run:** `desk mcp list` reports `meridian-ops (stdio): 11 tools` (8 read-only, `draft_email`, `cancel_order [destructive, idempotent]`, `create_refund [idempotent]`), 14 `policy://` resources and the `delay-apology` prompt. Tool definitions are **~2,592 tokens**.
+* **Command Run:** `desk agent --preset apex`, with every tool over MCP:
+  * `[mcp] meridian-ops (stdio): 11 tools, 14 resources, 1 prompts` → **5 steps, 34 tool calls, 54,962 tokens**, 8 drafts;
+  * credits **₹1,347 / 894 / 1,559.61 / 5,685 / 1,552.50 / 6,810 / 2,232 / 2,080**, the same as the Ch7 answer key.
+  * The seed `orders.db` was unchanged afterwards (`git status` clean).
+
+#### ✅ The same server works from your agent and from an off-the-shelf client
+* **MCP Inspector:** `npx @modelcontextprotocol/inspector .venv\Scripts\python.exe -m meridian_ops`.
+  * It connected over stdio on protocol **2025-11-25** (shown as "LEGACY"). Desk uses 2026-07-28, and the same server handled both.
+  * **Tools:** `get_order MS-10388` returned the order (with `days_late: 6`). `get_order MS-99999` showed **Tool Error** `{"code": "order_not_found", …}` instead of a crash.
+  * **Resources:** `URIs (14)`, each policy readable in full.
+  * **Prompts:** `delay-apology` rendered with an `order_id`.
+  * **Protocol tab:** every JSON-RPC message (`tools/list`, `tools/call`, `resources/read`…) with timing and OK/error.
+  * **Console tab:** empty by design at WARNING level, because a tool error is a normal answer, not a server fault. After adding `--log-level`, a bad flag showed the server's own stderr ("unrecognized arguments"), and with `--log-level INFO` each failed tool call is logged.
+* **Claude Code (IDE assistant), through `.mcp.json`:**
+  * Asked *"Use the meridian-ops tools to check stock for MS-VLV0300 and look up order MS-10422"*: it used `check_stock` and `get_order` → **MS-VLV0300 out of stock**; **MS-10422 shipped on time with Delhivery (DL566614170), ₹40,225**.
+  * Claude Code also **listed the server's prompt as a slash command** (`/meridian-ops:delay-apology`). Invoking it didn't run in that session, so Claude Code carried out the same instructions with the server's tools. It drafted the MS-10388 apology: 6 days late, the 6–10 day row of clause 3.1, a **₹1,347** credit, saved to the outbox and not sent.
+
+#### ✅ An unauthenticated HTTP request is rejected, and a read-scoped token cannot call a write tool
+* **Setup:** Terminal 1 ran `python -m meridian_ops --http --port 8080`. Terminal 2 ran `desk mcp … --only meridian-ops-http` with `$env:MERIDIAN_TOKEN` set as shown:
+
+| Token | Request | Result |
+| :--- | :--- | :--- |
+| none | `desk mcp list` | refused before connecting (`set MERIDIAN_TOKEN`); a raw POST returns **HTTP 401** |
+| `tok_invalid_zzz` | `desk mcp list` | **HTTP 401** `invalid_token` |
+| `tok_expired_0c9e55aa` | `desk mcp list` | **HTTP 401** (expired 2025-01-01) |
+| `tok_read_7f3a91c2` | `check_stock MS-VLV0200` | ✅ 640 pcs |
+| `tok_read_7f3a91c2` | `create_refund` | **HTTP 403** `insufficient_scope`: *"create_refund requires the orders:write scope"* |
+| `tok_rw_b21d04e8` | `create_refund` (key `ref-scope-test-01`) | ✅ `"duplicate": false` |
+| `tok_rw_b21d04e8` | the same call again | ✅ `"duplicate": true`, *"nothing new was recorded"* (idempotency) |
+
+#### Build checklist (beyond "Done when")
+| Requirement | Evidence |
+| :--- | :--- |
+| Server with tools, resources and one prompt | 11 / 14 / `delay-apology` |
+| stdio **and** Streamable HTTP, 2026-07-28 stateless | Desk's client negotiates 2026-07-28 on both. HTTP runs `stateless_http=True` with JSON responses, so there is no session to keep |
+| Auth with read and write scopes per tool | the table above |
+| Agent refactored into an MCP client from a config file | `mcp_servers.json`, `MCPToolbox` |
+| **Third-party server** | Official `@modelcontextprotocol/server-filesystem` via `npx`, sandboxed to `meridian_desk_data/mcp/sandbox_dir`. See below |
+| MCP Inspector + one off-the-shelf client | Inspector and Claude Code, above |
+
+**Third-party server, live:**
+* `desk mcp list --only filesystem`: **16 tools**, connected through one config entry and **zero lines of Desk code**, compared with ~142 lines for one hand-wired carrier endpoint in Ch7.
+* `desk agent "Look up order MS-10388 and append one line about it to notes.md in the sandbox folder." --only meridian-ops --only filesystem`: `get_order` from our server, then the filesystem server's tool appended the line. **Two servers in one run.**
+* **Sandbox escape attempts were both refused:**
+  * `read_text_file "../../../.env"` and `read_text_file "D:/Shruthi/agentic-ai-challenge/.env"` returned *"Access denied - path outside allowed directories … not in …\sandbox_dir"*.
+  * A bare `.env` had resolved *inside* the sandbox, giving ENOENT, so it didn't test the boundary. The two escape attempts above are the real test.
+
+---
+
+### 4. Stretch
+
+#### ✅ Tool annotations and structured tool outputs
+* Every tool carries `readOnlyHint` / `destructiveHint` / `idempotentHint` / `openWorldHint`. Inspector shows them as badges (e.g. **READ-ONLY** on `get_order`), and `desk mcp list` prints them.
+* Results come back as `structuredContent` (a JSON object, with an output schema) plus a text copy. Errors are `isError: true` with Desk's `{code, message}`.
+
+#### ✅ Two server instances behind a round-robin load balancer
+* **Setup:** `python -m meridian_ops --http --port 8081`, `--port 8082`, and `python -m meridian_ops.lb --port 8080 --backends 8081 8082`. Each response carries an `X-Meridian-Backend` header.
+* **Result:** through the balancer, the client discovered 11 tools and made 7 tool calls, **all OK**. The **11 HTTP requests split 6 / 5** between the two instances. A read-only token was still refused `cancel_order` (`insufficient_scope`), because the `Authorization` header passes through and each backend checks it.
+* **Why it works:** the 2026-07-28 transport is **stateless** (no session handshake, every request self-contained), so any request can go to any instance.
+
+#### Load test (MCP Inspector, stdio)
+`get_order` with concurrency **10** for **10 s**:
+
+| Requests | OK | Errors | Throughput | Min | Mean | p50 | p90 | p95 | p99 | Max |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1,418 | 1,418 | **0** (0.00%) | **141.7 calls/s** | 25.1 ms | 65.3 ms | 69.5 ms | 79.7 ms | 83.7 ms | 97.5 ms | 116.2 ms |
+
+* The tail is tight: even the slowest 1% of calls stayed under 100 ms.
+* 10 in flight ÷ 65 ms each ≈ 150 calls/s, close to what was measured. The single stdio Python process is the bottleneck, and calls queue for it, which is the case for running more instances behind the balancer.
+* The latencies include Inspector's own browser and proxy hops.
+
+---
+
+### 5. "Break it" Experiment Results (Setting Up Challenge 9: Memory & Context)
+
+#### Experiment 1: Connect five servers (50+ tools) and measure tokens before the user types
+* **Setup:** `meridian-ops` (stdio) + `meridian-ops-http` + three stub servers built from `fake_servers/` (carrier tracking, Slack, GitHub) = **5 servers, 52 tools**. The two meridian-ops copies had their names prefixed (`meridian-ops__get_order` …) to avoid clashes.
+* **What Happened:**
+
+| Servers connected | Tools | Tool definitions (estimate) | Input tokens for **"Say hi."** |
+| :--- | :--- | :--- | :--- |
+| 1 (`meridian-ops`) | 11 | ~2,592 | **4,614** |
+| 5 | 52 | ~7,305 | **11,604** |
+
+* **Root Cause / Takeaway:** every tool definition is sent on **every** model call, whether or not it's used. Five servers made a two-word greeting cost about **7,000 extra tokens**, and a 20-step task pays that 20 times. Connecting everything is easy; paying for it on every turn is the new problem.
+
+#### Experiment 2: A 30-step task (`thirty_step_task.json`)
+* **Setup:**
+  * **Task:** the standing instruction (*"refer to every customer by their customer ID (CUST-####), never by name… Keep a running list in notes.md"*), then 25 per-customer steps and 5 summary steps, plus *"repeat the original standing instruction word for word"*.
+  * **Servers:** `meridian-ops` + `filesystem`, **27 tools (~6,036 tokens of definitions)**.
+  * **Budget:** `--max-steps 80 --max-tokens 2000000 --timeout 1500`.
+* **What Happened:**
+  * **Shape of the run:** **11 steps, 98 tool calls, 314,851 tokens** (303,820 in / 11,031 out), 75.9 s. The model batched up to 20 calls per turn and hit the 20-per-turn cap once.
+  * **Tool results piling up:** input per call grew from **10,458 → 14,658 → 19,407 → 24,166 → … → 40,374**.
+  * **Rate limits:** Azure returned **two 429 rate limits** mid-run; the retries (1 s, 2 s) saved it.
+  * **The instruction held.** `notes.md` contained **no customer names**, and the final answer repeated the standing instruction word for word. The per-customer facts were correct, checked against `orders.db`: CUST-0001 has 10 delayed orders, CUST-0013 (MS-10372) and CUST-0021 (MS-10360) one each, and the stock gaps match the Ch7 answer key.
+  * **But two answers were badly incomplete**, checked against the full database:
+
+| Step | The agent's answer | The database |
+| :--- | :--- | :--- |
+| "Find all orders shipped via DTDC" | **0** (among the 13 orders it reviewed) | **81** DTDC orders |
+| "Find hazardous orders and their carriers" | **1** (MS-10478) | **73** hazardous orders, **5 shipped by carriers not approved for hazardous goods** (MS-10085, MS-10200 via DTDC; MS-10299, MS-10318 via Delhivery; MS-10344 via BlueDart) |
+
+* **Root Cause / Takeaway:**
+  * The failure the challenge predicts, **losing the original instruction, did not happen at this size**: 30 steps were batched into 11 turns, and 40k tokens fits easily in the context window.
+  * What broke was **cost** (315k tokens, about 5.7× the MCP Apex run's 54,962) and **rate limits**.
+  * It also exposed **coverage**: `search_orders` works per customer, so "all DTDC orders" and "all hazardous orders" were simply out of reach. The agent said so (*"not a full-database count"*), but someone skimming would read "0 DTDC orders" and miss 81 orders and 5 real policy violations. **An agent is only as complete as its tools.**
+
+#### Experiment 3: Restart the program and ask what this customer said yesterday
+* **Run 1:** `desk agent "Customer CUST-0001 (Rahul at Apex) just told us: please ship MS-10401 before Friday, their plant restarts Monday. Note this."`
+  * It did the lookups: MS-10401 is 7 days late, both lines are out of stock, and a 3% credit of **₹894** applies, with `#4` for backorders.
+  * Then: *"I can't save notes to an order. I have no tool that edits order records."* **There is nowhere to remember anything.**
+* **Run 2** (a new process): `desk agent "What did customer CUST-0001 say yesterday?"`
+  * *"I can't tell you what CUST-0001 said yesterday. None of my tools give me access to customer messages, emails, call notes or chat logs."* It did not invent a conversation.
+  * One `search_orders` call returned **15,943 characters** (every Apex order), and the prompt jumped from **4,626 to 13,166 input tokens** from a single tool result, of which the model needed one sentence.
+* **Root Cause / Takeaway:** every run starts with **empty memory**, and raw JSON tool results are pasted into the context in full. Challenge 9 needs:
+  * **long-term memory** that survives a restart;
+  * **context management:** summarise or trim old tool results, and load only the tools a task needs.
+
+---
+
+### 6. What fell short (→ Challenge 9)
+* No memory between runs: yesterday's customer request is gone after a restart.
+* Context grows with every tool definition (×servers) and every raw tool result (a single result can triple the prompt).
+* Long runs cost hundreds of thousands of tokens and trip provider rate limits.
+* Tool coverage is uneven: no search by carrier or SKU across all orders, so database-wide questions get partial answers.
+* The MCP prompt was discovered by Claude Code but its slash command didn't run there; prompts need client support to be useful.
+* Write tools and drafts still have no human approval step (Challenges 10–11).

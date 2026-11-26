@@ -22,7 +22,6 @@ from pathlib import Path
 
 from .llm import call_with_retry
 from .prompts import AGENT_SYSTEM_PROMPT, PLAN_RULE
-from .tools import agent_tool_specs
 from .tooluse import ToolCall, log_path, write_log
 
 TRACE_DIR = Path("data") / "agent_traces"
@@ -101,8 +100,10 @@ def run_agent(task, model, client, toolbox, budget=None, plan=False, pricing=Non
     """Run the loop until the model finishes or a limit stops it. Returns an AgentRun (never raises on a limit;
     LLMError still propagates if the API itself fails)."""
     budget = budget or Budget()
-    tools = agent_tool_specs(plan)
+    tools = toolbox.specs(plan)  # Ch8: whatever the toolbox offers - local (Ch7) or discovered from MCP servers
     system = AGENT_SYSTEM_PROMPT.format(today=today or toolbox.today(), plan_rule=PLAN_RULE if plan else "")
+    if toolbox.instructions():
+        system += "\n\nConnected tool servers:\n" + toolbox.instructions()
     messages = [{"role": "system", "content": system}, {"role": "user", "content": task}]
     run = AgentRun(task, model)
     log_file = log_path() if tool_log == "default" else tool_log
@@ -142,7 +143,8 @@ def run_agent(task, model, client, toolbox, budget=None, plan=False, pricing=Non
             return "max_cost", f"${run.cost_usd:.4f} > ${budget.max_cost_usd:.2f}"
         return None
 
-    emit({"event": "start", "task": task, "model": model, "plan": plan,
+    emit({"event": "start", "task": task, "model": model, "plan": plan, "tools": len(tools),
+          "tool_definition_tokens": len(json.dumps(tools)) // 4,
           "budget": {"max_steps": budget.max_steps, "max_tokens": budget.max_tokens,
                      "max_cost_usd": budget.max_cost_usd if pricing else None, "wall_clock_s": budget.wall_clock_s}})
     while True:

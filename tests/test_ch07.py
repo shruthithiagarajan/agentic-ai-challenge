@@ -242,7 +242,7 @@ class AgentCliTests(AgentDataMixin, unittest.TestCase):
         env = {"DESK_DATA_DIR": str(self.root), "DESK_TOOL_LOG": "off", "DESK_TRACE_DIR": str(self.trace_dir),
                "DESK_OUTBOX": str(self.outbox), "DESK_MODEL_AGENT": "agent-model"}
         with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            args = cli.build_parser().parse_args(argv)
+            args = cli.build_parser().parse_args(argv[:1] + ["--local"] + argv[1:])  # Ch7: in-process tools
             code = cli.cmd_agent(args, client=client, sleep=lambda s: None, retrieve=lambda q: self.hits, clock=Clock())
         return code, out.getvalue(), err.getvalue()
 

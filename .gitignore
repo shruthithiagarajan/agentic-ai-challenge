@@ -21,3 +21,7 @@ data/tool_calls.jsonl
 data/agent_traces/
 meridian_desk_data/outbox/*
 !meridian_desk_data/outbox/.gitkeep
+
+# meridian-ops MCP server: working copy of orders.db (write tools) and stdio server logs
+data/meridian_ops/
+data/mcp_logs/

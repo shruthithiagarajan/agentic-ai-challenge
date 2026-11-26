@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "meridian-ops": {
+      "command": ".venv/Scripts/python.exe",
+      "args": ["-m", "meridian_ops"]
+    }
+  }
+}

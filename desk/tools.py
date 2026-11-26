@@ -153,8 +153,67 @@ TODO_TOOL = {"type": "function", "function": {
 
 
 def agent_tool_specs(plan=False):
-    """Tools for desk agent: the five Ch6 tools + list_orders + draft_email (+ todo with --plan)."""
+    """Tools for desk agent --local (Ch7): the five Ch6 tools + list_orders + draft_email (+ todo with --plan)."""
     return json.loads(json.dumps(TOOLS + AGENT_TOOLS + ([TODO_TOOL] if plan else [])))
+
+
+# Challenge 8: extra tools served only by the meridian-ops MCP server (names follow mcp/tool_scope_map.json).
+POLICY_NAME = r"^[a-z][a-z0-9_]*\.md$"
+MCP_TOOLS = [
+    {"type": "function", "function": {
+        "name": "list_policies",
+        "description": (
+            "List every Meridian policy document: file name (e.g. returns.md), title, effective date and section "
+            "headings. Use it to see which policies exist before reading one with read_policy, or to answer "
+            "'which policies cover X'. For a specific rule, search_policies is usually faster."),
+        "parameters": {"type": "object", "additionalProperties": False, "properties": {}}}},
+    {"type": "function", "function": {
+        "name": "read_policy",
+        "description": (
+            "Return the FULL text of one policy document by file name (from list_policies, e.g. shipping_delays.md), "
+            "with its title and effective date. Use it when you need a whole document or exact clause wording; "
+            "search_policies returns only the 5 most relevant sections. Error: policy_not_found."),
+        "parameters": {"type": "object", "additionalProperties": False, "required": ["name"], "properties": {
+            "name": {"type": "string", "pattern": POLICY_NAME, "description": "Policy file name, e.g. returns.md."}}}}},
+    {"type": "function", "function": {
+        "name": "cancel_order",
+        "description": (
+            "WRITE: cancel ONE order that has not shipped yet (status pending or processing). This changes the order "
+            "record and cannot be undone from Desk. Shipped, delivered, cancelled or refunded orders return the "
+            "error not_cancellable. Always confirm with the user before calling it. Requires the orders:write scope."),
+        "parameters": {"type": "object", "additionalProperties": False, "required": ["order_id", "reason"],
+                       "properties": {
+                           "order_id": {"type": "string", "pattern": ORDER_ID, "description": "e.g. MS-10488."},
+                           "reason": {"type": "string", "minLength": 3, "maxLength": 300,
+                                      "description": "Why it is being cancelled (stored on the order)."}}}}},
+    {"type": "function", "function": {
+        "name": "create_refund",
+        "description": (
+            "WRITE: record a refund for ONE order in the refund ledger. The amount must be positive and no more "
+            "than the order total minus refunds already recorded. idempotency_key makes retries safe: calling again "
+            "with the same key returns the existing refund instead of paying twice. Always confirm the amount with "
+            "the user first. Requires the orders:write scope. Errors: order_not_found, amount_too_large."),
+        "parameters": {"type": "object", "additionalProperties": False,
+                       "required": ["order_id", "amount_inr", "reason", "idempotency_key"], "properties": {
+                           "order_id": {"type": "string", "pattern": ORDER_ID},
+                           "amount_inr": {"type": "number", "minimum": 0.01, "description": "Refund amount in INR."},
+                           "reason": {"type": "string", "minLength": 3, "maxLength": 300},
+                           "idempotency_key": {"type": "string", "pattern": r"^[A-Za-z0-9_-]{8,64}$",
+                                               "description": "A unique key for this refund, e.g. ref-MS-10388-001."}}}}},
+]
+WRITE_TOOLS = {"cancel_order", "create_refund"}
+
+
+def mcp_tool_specs():
+    """The meridian-ops server's tools, in serving order (names from tool_scope_map.json + calculate and search)."""
+    by_name = {t["function"]["name"]: t for t in TOOLS + AGENT_TOOLS + MCP_TOOLS}
+    specs = []
+    for name in ["get_order", "search_orders", "search_catalog", "check_stock", "calculate", "search_policies",
+                 "list_policies", "read_policy", "draft_email", "cancel_order", "create_refund"]:
+        spec = json.loads(json.dumps(by_name["list_orders" if name == "search_orders" else name]))
+        spec["function"]["name"] = name
+        specs.append(spec)
+    return specs
 
 
 # Stretch: one deliberately vague description, to watch tool selection degrade (desk tools --vague).
@@ -173,7 +232,8 @@ def tool_specs(vague=False):
     return specs
 
 
-SCHEMAS = {t["function"]["name"]: t["function"]["parameters"] for t in TOOLS + AGENT_TOOLS + [TODO_TOOL]}
+SCHEMAS = {t["function"]["name"]: t["function"]["parameters"] for t in TOOLS + AGENT_TOOLS + [TODO_TOOL] + MCP_TOOLS}
+SCHEMAS["search_orders"] = SCHEMAS["list_orders"]
 
 
 class ToolError(Exception):
@@ -318,16 +378,27 @@ def _words(text):
 class Toolbox:
     """Runs the tools. `retrieve(query) -> [rag.Hit]` backs search_policies (default: the Ch5 pipeline over .chroma)."""
 
-    def __init__(self, db_path, catalog_path, retrieve=None, fail=None, outbox=None):
+    def __init__(self, db_path, catalog_path, retrieve=None, fail=None, outbox=None, policies_dir=None, writable=False):
         self.db_path, self.catalog_path = Path(db_path), Path(catalog_path)
         self.outbox = Path(outbox) if outbox else self.db_path.parent / "outbox"  # draft_email writes only here
+        self.policies_dir = Path(policies_dir) if policies_dir else self.catalog_path.parent / "policies"
+        self.writable = writable  # Ch8 write tools only run on the MCP server's working copy of the database
         self._retrieve, self._catalog, self._today = retrieve, None, None
         self.fail = set(fail or [])  # tool names forced to crash (desk tools --fail-tool), to test error handling
         self.plan, self.drafts = [], []  # todo checklist and saved draft paths, for this run
         self.handlers = {"get_order": self.get_order, "search_catalog": self.search_catalog,
                          "check_stock": self.check_stock, "calculate": self.calculate,
                          "search_policies": self.search_policies, "list_orders": self.list_orders,
-                         "draft_email": self.draft_email, "todo": self.todo}
+                         "draft_email": self.draft_email, "todo": self.todo, "search_orders": self.list_orders,
+                         "list_policies": self.list_policies, "read_policy": self.read_policy,
+                         "cancel_order": self.cancel_order, "create_refund": self.create_refund}
+
+    def specs(self, plan=False):
+        """Tool list for desk agent --local (Challenge 7 behaviour)."""
+        return agent_tool_specs(plan)
+
+    def instructions(self):
+        return ""
 
     def run(self, name, raw_args):
         """Validate + execute one tool call. Never raises: returns {"ok": ..., "result" | "error": ...}."""
@@ -512,6 +583,82 @@ class Toolbox:
         path.write_text(text, encoding="utf-8")
         self.drafts.append(str(path))
         return {"saved": str(path), "sent": False, "to": to, "subject": subject, "body_chars": len(body)}
+
+    # -- policy documents (Ch8: also served as MCP resources) --
+
+    def list_policies(self):
+        from . import rag
+
+        out = []
+        for f in rag.policy_files(self.policies_dir):
+            front, body = rag.parse_front_matter(f.read_text(encoding="utf-8"))
+            out.append({"name": f.name, "title": front.get("title", f.stem), "effective_date": front.get("effective_date", ""),
+                        "sections": [f"{m.group(1)}. {m.group(2).strip()}" for m in rag.HEADING.finditer(body)]})
+        return {"count": len(out), "policies": out}
+
+    def read_policy(self, name):
+        path = self.policies_dir / name
+        if not path.is_file() or path.parent.resolve() != self.policies_dir.resolve():
+            raise ToolError("policy_not_found", f"no policy document named {name} - see list_policies")
+        from . import rag
+
+        front, _ = rag.parse_front_matter(path.read_text(encoding="utf-8"))
+        return {"name": name, "title": front.get("title", ""), "effective_date": front.get("effective_date", ""),
+                "text": path.read_text(encoding="utf-8")}
+
+    # -- write tools (Ch8; only on a writable working copy, never the seed database) --
+
+    def _connect_rw(self):
+        if not self.writable:
+            raise ToolError("read_only", "this Desk instance is read-only; write tools run only on the meridian-ops "
+                                         "MCP server's working copy of the database")
+        con = sqlite3.connect(self.db_path)
+        con.row_factory = sqlite3.Row
+        return con
+
+    def cancel_order(self, order_id, reason):
+        con = self._connect_rw()
+        try:
+            order = con.execute("SELECT status, notes FROM orders WHERE id = ?", (order_id,)).fetchone()
+            if order is None:
+                raise ToolError("order_not_found", f"no order with id {order_id} in the order database")
+            if order["status"] not in ("pending", "processing"):
+                raise ToolError("not_cancellable", f"{order_id} is {order['status']}; only pending or processing "
+                                                   "orders can be cancelled")
+            note = f"{order['notes'] or ''} | cancelled via Desk: {reason}".strip(" |")
+            con.execute("UPDATE orders SET status = 'cancelled', notes = ? WHERE id = ?", (note, order_id))
+            con.commit()
+        finally:
+            con.close()
+        return {"order_id": order_id, "previous_status": order["status"], "status": "cancelled", "reason": reason}
+
+    def create_refund(self, order_id, amount_inr, reason, idempotency_key):
+        con = self._connect_rw()
+        try:
+            same = con.execute("SELECT order_id, amount, created_at FROM refund_ledger WHERE idempotency_key = ?",
+                               (idempotency_key,)).fetchone()
+            if same:
+                return {"order_id": same["order_id"], "amount_inr": same["amount"], "idempotency_key": idempotency_key,
+                        "created_at": same["created_at"], "duplicate": True,
+                        "note": "a refund with this idempotency_key already exists - nothing new was recorded"}
+            order = con.execute("SELECT total FROM orders WHERE id = ?", (order_id,)).fetchone()
+            if order is None:
+                raise ToolError("order_not_found", f"no order with id {order_id} in the order database")
+            refunded = con.execute("SELECT COALESCE(SUM(amount), 0) FROM refund_ledger WHERE order_id = ?",
+                                   (order_id,)).fetchone()[0]
+            if amount_inr > order["total"] - refunded + 1e-9:
+                raise ToolError("amount_too_large", f"refund {amount_inr} exceeds what is left to refund on {order_id} "
+                                                    f"({order['total'] - refunded:.2f} of {order['total']:.2f})")
+            stamp = time.strftime("%Y-%m-%dT%H:%M:%S")
+            con.execute("INSERT INTO refund_ledger(order_id, amount, idempotency_key, approved_by, created_at) "
+                        "VALUES (?, ?, ?, ?, ?)", (order_id, amount_inr, idempotency_key, "desk-agent (unapproved)", stamp))
+            con.execute("UPDATE orders SET refund_amount = COALESCE(refund_amount, 0) + ? WHERE id = ?",
+                        (amount_inr, order_id))
+            con.commit()
+        finally:
+            con.close()
+        return {"order_id": order_id, "amount_inr": amount_inr, "reason": reason, "idempotency_key": idempotency_key,
+                "created_at": stamp, "duplicate": False}
 
     # -- todo (stretch) --
 

@@ -8,6 +8,7 @@ Project: **Desk**, the customer-operations assistant for the fictional Meridian 
 - Run: `desk ask "question"` (flags: `--model`, `--temperature`, `--simulate 429|timeout|network`)
 - Ch6 tools: `desk tools "question"` (flags: `--debug`, `--fail-tool NAME`, `--vague`, `--simulate`) and `desk eval-tools` (tool selection on `chat/tool_test_prompts.json`). Tool calls on Azure GPT go through `/v1/responses` (chat.completions rejects tools with reasoning on); every call is logged to `data/tool_calls.jsonl`
 - Ch7 agent: `desk agent "task"` or `desk agent --preset apex|impossible|repeat` (flags: `--plan`, `--max-steps`, `--max-tokens`, `--max-cost`, `--timeout`, `--show-results`, `--fail-tool`); exit 3 = stopped on a limit. Trace per run in `data/agent_traces/`, drafts in `meridian_desk_data/outbox/` (never sent)
+- Ch8 MCP: `python -m meridian_ops` (stdio) or `python -m meridian_ops --http --port 8080` (stateless Streamable HTTP, bearer tokens from `meridian_desk_data/mcp/auth_tokens.json`, 401 / 403 per tool scope); `desk agent` now discovers its tools from `mcp_servers.json` (`--only NAME`, `--servers FILE`, `--prompt delay-apology --arg order_id=...`; `--local` = Ch7 in-process tools); `desk mcp list|call`; stretch LB: `python -m meridian_ops.lb --backends 8081 8082`. Write tools only touch `data/meridian_ops/orders.db` (a copy), never the seed
 - Test (offline, no key): `python -m unittest -v`
 - Live Break it run: `python scripts/break_it.py --write`
 

@@ -1,0 +1,60 @@
+{
+  "servers": [
+    {
+      "name": "meridian-ops",
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "meridian_ops"],
+      "note": "Meridian's own tools, resources and delay-apology prompt (Challenge 8)"
+    },
+    {
+      "name": "meridian-ops-http",
+      "transport": "streamable-http",
+      "url": "http://127.0.0.1:8080/mcp",
+      "auth": "bearer",
+      "token_env": "MERIDIAN_TOKEN",
+      "enabled": false,
+      "note": "start it first: python -m meridian_ops --http --port 8080; set MERIDIAN_TOKEN to a token from meridian_desk_data/mcp/auth_tokens.json"
+    },
+    {
+      "name": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "meridian_desk_data/mcp/sandbox_dir"],
+      "enabled": false,
+      "note": "third-party server (npm); can only read and write inside meridian_desk_data/mcp/sandbox_dir"
+    },
+    {
+      "name": "fetch",
+      "transport": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "enabled": false,
+      "note": "third-party server (PyPI): fetches web pages"
+    },
+    {
+      "name": "carrier_tracking",
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "meridian_ops.stub", "meridian_desk_data/mcp/fake_servers/carrier_tracking.json"],
+      "enabled": false,
+      "note": "Break it stub (canned answers)"
+    },
+    {
+      "name": "slack_stub",
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "meridian_ops.stub", "meridian_desk_data/mcp/fake_servers/slack_stub.json"],
+      "enabled": false,
+      "note": "Break it stub (canned answers)"
+    },
+    {
+      "name": "github_stub",
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "meridian_ops.stub", "meridian_desk_data/mcp/fake_servers/github_stub.json"],
+      "enabled": false,
+      "note": "Break it stub (canned answers)"
+    }
+  ]
+}
